@@ -1,0 +1,68 @@
+slam_toolbox:
+  ros__parameters:
+    # ========== 核心插件与求解器 ==========
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: HuberLoss
+
+    # ========== 坐标系与基础 ROS 参数 ==========
+    odom_frame: odom_combined
+    map_frame: map
+    base_frame: base_footprint
+    scan_topic: /scan
+    mode: mapping 
+
+    debug_logging: false
+    throttle_scans: 1
+    transform_publish_period: 0.05
+    map_update_interval: 1.0
+    resolution: 0.05
+    
+    # 【截断远距离噪点，减负 CPU】
+    max_laser_range: 12.0               # 严格限制在 N10P 的高精度有效范围内
+    min_laser_range: 0.2
+    minimum_time_interval: 0.0
+    transform_timeout: 0.5
+    tf_buffer_duration: 30.0
+    stack_size_to_use: 40000000
+    enable_interactive_mode: true
+
+    # ========== 扫描与更新策略 ==========
+    use_odom: true
+    use_scan_matching: true
+    use_scan_barycenter: true
+    
+    # 【平衡更新频率与算力】
+    minimum_travel_distance: 0.2        # 配合高精度底盘，20cm 更新一次足够保证地图细节，同时不会榨干 CPU
+    minimum_travel_heading: 0.2         
+    
+    # 【利用 Jetson 8G 内存池】
+    scan_buffer_size: 30                # 放大历史回溯池，强化长走廊匹配能力
+    scan_buffer_maximum_scan_distance: 12.0
+    
+    # ========== 匹配得分阈值 ==========
+    link_match_minimum_response_fine: 0.35 # 适配 N10P 的点云稀疏度，不盲目追求高分，防止地图卡死
+    link_scan_maximum_distance: 1.5
+    
+    # ========== 回环检测 ==========
+    do_loop_closing: true 
+    loop_search_maximum_distance: 7.0   
+    loop_match_minimum_chain_size: 10            
+    loop_match_maximum_variance_coarse: 3.0  
+    loop_match_minimum_response_coarse: 0.45 
+    loop_match_minimum_response_fine: 0.55
+
+    # ========== 惩罚因子 (拉直墙壁的核心) ==========
+    # 极度信任经过滑差与线性补偿的高精度底盘
+    distance_variance_penalty: 1.2      # 强距离惩罚：雷达点云必须严格贴合底盘轨迹，消除错位锯齿
+    angle_variance_penalty: 1.5         # 强角度惩罚：转弯时严格依赖极低误差的航向角，杜绝发虚
+    
+    fine_search_angle_offset: 0.00349      
+    coarse_search_angle_offset: 0.349    
+    coarse_angle_resolution: 0.0349        
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true

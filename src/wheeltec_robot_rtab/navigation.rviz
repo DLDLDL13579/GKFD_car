@@ -1,0 +1,79 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Value: true
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Description Topic:
+        Value: /robot_description
+      Value: true
+    - Class: rviz_default_plugins/Map
+      Name: "Static Map"
+      Topic:
+        Value: /map
+      Color Scheme: map
+      Value: true
+    - Class: rviz_default_plugins/LaserScan
+      Name: "Lidar Scan"
+      Topic:
+        Value: /scan
+      Size (m): 0.05
+      Color: 255; 0; 0
+      Style: Flat Squares
+      Value: true
+    - Class: rviz_default_plugins/PointCloud2
+      Name: "3D Camera Obstacles"
+      Topic:
+        Value: /camera/depth/color/points
+      Size (m): 0.02
+      Style: Points
+      Color Transformer: RGB8
+      Value: true
+    - Class: rviz_default_plugins/Map
+      Name: "Global Costmap (Inflation)"
+      Topic:
+        Value: /global_costmap/costmap
+      Color Scheme: costmap
+      Value: true
+    - Class: rviz_default_plugins/Map
+      Name: "Local Costmap (Dynamic)"
+      Topic:
+        Value: /local_costmap/costmap
+      Color Scheme: costmap
+      Value: true
+    - Class: rviz_default_plugins/Path
+      Name: "Global Plan (Route)"
+      Topic:
+        Value: /plan
+      Color: 0; 255; 0
+      Line Style: Lines
+      Line Width: 0.03
+      Value: true
+    - Class: rviz_default_plugins/Path
+      Name: "Local Plan (Steering)"
+      Topic:
+        Value: /local_plan
+      Color: 0; 0; 255
+      Line Style: Lines
+      Line Width: 0.05
+      Value: true
+  Global Options:
+    Fixed Frame: map
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic:
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose

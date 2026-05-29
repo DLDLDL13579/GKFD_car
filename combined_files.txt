@@ -1,0 +1,1143 @@
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_camera.launch.py =====
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    realsense_dir = get_package_share_directory('realsense2_camera')
+    realsense_launch_dir = os.path.join(realsense_dir, 'launch')
+
+    rs_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(realsense_launch_dir, 'rs_launch.py')),
+        launch_arguments={
+            'align_depth.enable': 'true',
+            'pointcloud.enable': 'false',
+            
+            # 【修改点 1：将帧率从 30 降至 15，大幅降低 USB 和 Wi-Fi 负载】
+            'rgb_camera.profile': '848x480x15',
+            'depth_module.profile': '848x480x15',
+            
+            # 【修改点 2：加入官方降采样滤波器，点云数据量瞬间压缩 75% 以上】
+            # 'filters': 'decimation',
+            
+            'allow_no_device': 'false',
+            
+            # -- 针对 Jetson 架构的核心规避参数 (保持不变) --
+            'enable_gyro': 'false',   # 强制禁用陀螺仪
+            'enable_accel': 'false',  # 强制禁用加速度计
+            'enable_sync': 'true'    # 关闭硬件级同步，防止等待 IMU 数据导致死锁
+        }.items()
+    )
+
+    static_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='base_to_camera_tf',
+        arguments=['0.21', '0.0', '0.19', '0.0', '0.035', '0.0', 'base_link', 'camera_link']
+    )
+
+    ld = LaunchDescription()
+    ld.add_action(rs_launch)
+    ld.add_action(static_tf_node)
+
+    return ld
+
+
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_lidar.launch.py =====
+import os
+from pathlib import Path
+import launch_ros.actions
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import (DeclareLaunchArgument, GroupAction,
+                            IncludeLaunchDescription, SetEnvironmentVariable)
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+def generate_launch_description():
+    Lslidar_dir = get_package_share_directory('lslidar_driver')
+    Lslidar_launch_dir = os.path.join(Lslidar_dir, 'launch')
+
+       
+    Ld14_dir = get_package_share_directory('ldlidar_sl_ros2')
+    Ld14_launch_dir = os.path.join(Ld14_dir, 'launch')
+    
+    Ld06_dir = get_package_share_directory('ldlidar_stl_ros2')
+    Ld06_launch_dir = os.path.join(Ld14_dir, 'launch')
+           
+
+    Lsm10_m10_uart = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Lslidar_launch_dir, 'lsm10_uart_launch.py')),)
+            
+    Lsm10_m10_net = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Lslidar_launch_dir, 'lsm10_net_launch.py')),)
+            
+    Lsm10_m10p_uart = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Lslidar_launch_dir, 'lsm10p_uart_launch.py')),)
+            
+    Lsm10_m10p_net = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Lslidar_launch_dir, 'lsm10p_net_launch.py')),)
+             
+    Lsn10 = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Lslidar_launch_dir, 'lsn10_launch.py')),)
+    Lsn10p = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Lslidar_launch_dir, 'lsn10p_launch.py')),)            
+    Ld14 = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Ld14_launch_dir, 'ld14.launch.py')),)
+    Ld06 = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(Ld06_launch_dir, 'ld06.launch.py')),)
+                  
+    # Create the launch description and populate
+    ld = LaunchDescription()
+    '''
+    Please select your lidar here, options include:
+    Lsm10_m10p_uart、Lsm10_m10p_net、Lsm10_m10_uart、Lsm10_m10_net、Lsn10、Lsn10p,ld14、Ld06.
+    1.If you are using LS* lidar (including lsn10, lsm10*), please don't forget to 
+    modify the tf conversion parameters of robot_mode_description.launch.py
+    according to the user guide file.
+    2.If you are using m10 lidar, please pay attention to distinguish whether it is m10p or not.
+    '''
+    ld.add_action(Lsn10p)
+
+    return ld
+
+
+
+
+===== /home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/launch/wheeltec_slam_rtab.launch.py =====
+import os
+import launch
+import launch.actions
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch import LaunchDescription
+from launch.conditions import IfCondition, UnlessCondition
+from ament_index_python import get_package_share_directory
+from launch_ros.actions import Node
+
+def generate_launch_description():
+
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    qos = LaunchConfiguration('qos')
+    Localization = LaunchConfiguration('Localization')
+
+    bringup_dir = get_package_share_directory('turn_on_wheeltec_robot')
+
+    wheeltec_robot = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch','turn_on_wheeltec_robot.launch.py')),
+    )
+    
+    # 【已修改】：雷达延迟 3 秒启动，避开相机抢电
+    wheeltec_lidar = TimerAction(
+        period=3.0, 
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(bringup_dir, 'launch', 'wheeltec_lidar.launch.py'))
+            )
+        ]
+    )
+    
+    wheeltec_camera = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(bringup_dir,'launch', 'wheeltec_camera.launch.py')),
+    )
+    
+    parameters={
+          'frame_id':'base_footprint', 
+          'use_sim_time':use_sim_time,
+          
+          'subscribe_rgbd':True,
+          'subscribe_scan':True, 
+          
+          'use_action_for_goal':True,
+          'qos_image':qos,
+          'qos_imu':qos,
+          
+          'Reg/Strategy':'1',           
+          'Reg/Force3DoF':'true',       
+          'RGBD/NeighborLinkRefining':'True',
+          'Optimizer/GravitySigma':'0',
+          
+          'Grid/FromDepth': 'false',         
+          'Grid/3D': 'false',                
+          'Grid/RangeMax': '10.0',           
+          'Grid/RangeMin': '0.2',            
+          
+          'Grid/MaxObstacleHeight': '1.2',   
+          'Grid/MinObstacleHeight': '0.05',  
+          
+          'Grid/NoiseFilteringMinNeighbors': '2', 
+          'Grid/NoiseFilteringRadius': '0.05',
+          'Grid/RayTracing': 'true',         
+          'Grid/CellSize': '0.05',           
+    }
+    
+    remappings=[
+          ('odom', '/odom_combined'),
+          ('scan', '/scan'),
+          ('rgb/image', '/camera/color/image_raw'), 
+          ('rgb/camera_info', '/camera/color/camera_info'),
+          ('depth/image', '/camera/aligned_depth_to_color/image_raw')]
+
+    return LaunchDescription([
+        wheeltec_robot, wheeltec_lidar, wheeltec_camera,
+
+        DeclareLaunchArgument('use_sim_time', default_value='false'),
+        DeclareLaunchArgument('qos',default_value='2'),
+        DeclareLaunchArgument('Localization', default_value='false'),        
+        
+        # 【核心修复 3】：添加雷达的物理位置 TF 转换！(x=0.12, z=0.23)
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_to_laser_tf',
+            arguments=['0.11', '0.0', '0.21', '0.0', '0.0', '0.0', 'base_link', 'laser']
+        ),
+
+        Node(
+            package='rtabmap_sync', executable='rgbd_sync', output='screen',
+            parameters=[{'approx_sync':True, 'approx_sync_max_interval':0.1, 'use_sim_time':use_sim_time, 'qos':qos}],
+            remappings=remappings),
+
+        Node(
+            condition=IfCondition(Localization),
+            package='rtabmap_slam', executable='rtabmap', output='screen',
+            parameters=[parameters,
+              {'Mem/IncrementalMemory':'False',
+               'Mem/InitWMWithAllNodes':'True'}],
+            remappings=remappings),      
+            
+        Node(
+            condition=UnlessCondition(Localization),
+            package='rtabmap_slam', executable='rtabmap', output='screen',
+            parameters=[parameters],
+            remappings=remappings,
+            arguments=['-d']),
+    ])
+
+
+===== /home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/params/rtabmap_nav_params.yaml =====
+amcl:
+  ros__parameters:
+    use_sim_time: False
+    alpha1: 0.5   #里程计的旋转估计中来自旋转的预期过程噪声
+    alpha2: 0.2   #里程计的旋转估计中来自平移的预期过程噪声
+    alpha3: 0.2  #里程计的翻译估计中来自translation的预期过程噪声
+    alpha4: 0.4  #里程计的平移估计中因旋转而产生的预期过程噪声
+    alpha5: 0.2  #仅适用于 Omni 型号：translation噪音
+    base_frame_id: "base_footprint" #机器人底座框架 
+    beam_skip_distance: 0.5         #忽略似然场模型中大多数粒子不同意的光束。考虑跳过的最大距离（米）
+    beam_skip_error_threshold: 0.9  #由于收敛性不好，未匹配地图后强制进行完全更新的光束百分比
+    beam_skip_threshold: 0.3        #需要跳过的光束的百分比。
+    do_beamskip: false              #是否在似然场模型中进行波束跳跃
+    global_frame_id: "map"          #定位系统发布的坐标框架的名称
+    lambda_short: 0.1               #模型 z_short 部分的指数衰减参数
+    laser_likelihood_max_dist: 2.0  #在地图上进行障碍物膨胀的最大距离，用于似然场模型
+    laser_max_range: 100.0          #要考虑的最大扫描范围，-1.0 将导致使用激光报告的最大范围
+    laser_min_range: -1.0           #要考虑的最小扫描范围，-1.0 将导致使用激光报告的最小范围
+    laser_model_type: "likelihood_field" #使用哪种模型，
+    #beam、likelihood_field 或 unlikely_field_prob。与 unlikely_field 相同，但如果启用，则包含 beamskip 功能
+    max_beams: 60                   #更新过滤器时每次扫描要使用多少个均匀分布的光束。
+    max_particles: 2000             #允许的最大粒子数
+    min_particles: 500              #允许的最小粒子数
+    odom_frame_id: "odom_combined"  #使用哪个框架进行里程计
+    pf_err: 0.02                    #粒子过滤器群体误差
+    pf_z: 0.85                      #粒子过滤器群体密度
+    recovery_alpha_fast: 0.0        #快速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
+    recovery_alpha_slow: 0.0        #慢速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
+    resample_interval: 2            #重采样之前所需的过滤器更新次数
+    robot_model_type: "nav2_amcl::DifferentialMotionMode" #插件类的完全限定类型。
+    #选项为“nav2_amcl::DifferentialMotionModel”和“nav2_amcl::OmniMotionModel”。
+
+    save_pose_rate: 0.5             #将最后估计的姿势和协方差存储到参数服务器的最大速率（Hz）
+    sigma_hit: 0.02                 #模型的 z_hit 部分中使用的高斯模型的标准差
+    tf_broadcast: true              #将其设置为 false 以防止 amcl 发布全局框架和里程计框架之间的变换
+    transform_tolerance: 0.3        #发布转换的容差
+    update_min_a: 0.06              #执行过滤器更新之前需要进行旋转运动。
+    update_min_d: 0.025             #执行过滤器更新之前需要进行平移运动
+    z_hit: 0.7                      #模型的 z_hit 部分的混合权重，所有使用的 z 权重之和必须为 1。
+    z_max: 0.001                    #模型的 z_max 部分的混合权重，所有使用的 z 权重之和必须为 1。
+    z_rand: 0.059                   #模型的 z_rand 部分的混合权重，所有使用的 z 权重之和必须为 1。
+    z_short: 0.24                   #模型中 z_short 部分的混合权重，所有使用的 z 权重之和必须为 1。
+    scan_topic: scan                #要订阅的激光雷达
+
+    # Initial Pose
+    set_initial_pose: True #AMCL 从 initial_pose* 参数设置初始姿势，而不是等待 initial_pose 消息
+    initial_pose.x: 0.0
+    initial_pose.y: 0.0
+    initial_pose.z: 0.0
+    initial_pose.yaw: 0.0
+    #Amcl参数解释参考：https://docs.nav2.org/configuration/packages/configuring-amcl.html
+
+amcl_map_client:
+  ros__parameters:
+    use_sim_time: False
+
+amcl_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: False
+    transform_tolerance: 0.1 #变换容差
+    goal_reached_tol: 0.25 #接受姿势作为目标的容忍度(m)
+    global_frame: map
+    robot_base_frame: base_footprint
+    odom_topic: /odom_combined
+    bt_loop_duration: 10        #BT 执行每次迭代的持续时间（以毫秒为单位
+    default_server_timeout: 20  #BT 操作节点等待操作服务器确认时的默认超时值（以毫秒为单位）
+    # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
+    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
+    # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
+    # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
+    #plugin_lib_names: #行为树节点共享库列表，Humble后的版本默认包含所有NAV2 BT库，这里可以加入自定义BT节点
+    error_code_names:
+    - compute_path_error_code 
+    - follow_path_error_code
+
+# bt_navigator参数说明：https://docs.nav2.org/configuration/packages/configuring-bt-navigator.html?highlight=bt_navigator
+
+bt_navigator_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+
+controller_server:
+  ros__parameters:
+    use_sim_time: False
+    controller_frequency: 20.0           #运行控制器的频率
+    # min_x_velocity_threshold: 0.001      #最小 x 速度阈值
+    # min_y_velocity_threshold: 0.5        #最小 y 速度阈值
+    # min_theta_velocity_threshold: 0.001  #最小速度阈值
+    odom_topic: /odom_combined
+    failure_tolerance: 0.3 #故障容忍度：被调用的控制器插件可以失败的最大持续时间(S)，设置为0表示禁用
+    progress_checker_plugin: "progress_checker" #进度检查器，用于检查机器人进度的进度检查器插件的映射名称
+    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker" #目标检查器
+    controller_plugins: ["FollowPath"]    #控制器插件
+
+    # Progress checker parameters
+    progress_checker: #进度检查器
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5 #所需运动半径
+      movement_time_allowance: 10.0 #移动时间容差
+    # Goal checker parameters
+    #precise_goal_checker:
+    #  plugin: "nav2_controller::SimpleGoalChecker"
+    #  xy_goal_tolerance: 0.25
+    #  yaw_goal_tolerance: 0.25
+    #  stateful: True
+    general_goal_checker: #目标检查器
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25  #xy 目标容差
+      yaw_goal_tolerance: 0.25 #yaw目标容差
+    # DWB parameters
+    FollowPath: 
+      plugin: "nav2_rotation_shim_controller::RotationShimController" #旋转控制器
+      primary_controller: "nav2_mppi_controller::MPPIController" #MPPI控制器
+      angular_dist_threshold: 0.785
+      forward_sampling_distance: 0.5
+      rotate_to_heading_angular_vel: 1.8
+      max_angular_accel: 3.2
+      simulate_ahead_time: 1.0
+      rotate_to_goal_heading: True
+    
+      time_steps: 56    #候选轨迹中的时间步长（点）数
+      model_dt: 0.05    #每个时间步长的时间步长的长度dt（以秒为单位）是预测范围
+      batch_size: 2000  #在给定迭代中从当前最佳控制序列中随机采样的候选轨迹的数量
+      vx_std: 0.2       #Vx 的抽样标准差
+      vy_std: 0.2       #Vy 的抽样标准差
+      wz_std: 0.4       #Wz（角速度）的抽样标准差
+      vx_max: 0.3       #目标最大前进速度（米/秒）
+      vx_min: 0.0    #目标最大反向速度（米/秒）
+      vy_max: 0.0      #如果使用Omni运动模型，目标最大横向速度（m/s）
+      wz_max: 1.0       #最大旋转速度（弧度/秒）
+      ax_max: 1.0
+      ax_min: -1.0
+      ay_max: 0.3
+      az_max: 1.0
+      iteration_count: 1 #迭代次数
+      prune_distance: 1.5 #路径上距离机器人最近点的距离（米）
+      enforce_path_inversion: false
+      transform_tolerance: 0.1 #使用 TF（s）进行数据转换的时间容差
+      temperature: 0.3 #根据成本选择轨迹，0表示使用成本最佳的控制，巨大的值将导致仅取所有轨迹的平均值而不考虑成本。
+      gamma: 0.015 #平滑度（高）和低能耗（低）之间的权衡,保持默认值
+      motion_model: "Omni" #用于轨迹规划的所需运动模型。选项包括DiffDrive、Omni或Ackermann。
+      visualize: false #是否发布调试轨迹以供可视化。
+      TrajectoryVisualizer: #轨迹可视化
+        trajectory_step: 5 #轨迹之间的步骤可视化以对候选轨迹池进行下采样
+        time_step: 3 #轨迹上点之间的步骤可视化以降低轨迹密度的采样
+      AckermannConstraints:
+        min_turning_r: 0.25 #最小转弯半径（阿克曼运动模型）
+      critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"] #评论插件
+      ConstraintCritic: #修复超出设定的动态或运动学约束的轨迹
+        enabled: true
+        cost_power: 1 
+        cost_weight: 4.0  #权重参数
+      
+      GoalAngleCritic: #当距离目标较近时，GoalAngleCritic会激励导航以达到目标姿势的角度
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.0 #权重参数
+        threshold_to_consider: 0.5  #考虑阈值：机器人与目标之间的最小距离（米），超过此距离则考虑角度目标成本
+
+      GoalCritic: #当距离目标较近时，GoalCritic会激励机器人在空间上向目标导航
+        enabled: true
+        cost_power: 1
+        cost_weight: 15.0 #权重参数
+        threshold_to_consider: 1.4  #机器人与目标之间的最小距离（米），超过此距离则要考虑目标距离成本。
+
+      ObstaclesCritic:
+        enabled: true
+        cost_power: 1
+        repulsion_weight: 1.5 #权重参数，通常优先选择成本较低的空间中的路线。
+        critical_weight: 10.0 #应用于临界碰撞的权重，用于collision_margin_distance防止近距离碰撞
+        consider_footprint: false #是否使用点成本（如果机器人是圆形的或者计算能力低）或计算 SE2 足迹成本
+        collision_cost: 10000.0 #应用于轨迹中真实碰撞的成本。
+        collision_margin_distance: 0.2 #碰撞边缘距离，应该设置在0.05-0.2之间，请确保将此参数设置为预计机器人需要穿越的最窄空间
+        near_goal_distance: 0.4 #靠近目标的距离（米）停止应用优先障碍物项，以允许机器人平稳地收敛到靠近障碍物的目标姿势，0.5 --> 0.6 -->0.3(Tues) 
+        cost_scaling_factor: 5.0
+        inflation_radius: 0.20  #膨胀半径，仅限Humble
+
+      PreferForwardCritic: #激励机器人前进，而不是后退
+        enabled: true
+        cost_power: 1
+        cost_weight: 1.5 #权重参数
+        threshold_to_consider: 0.5 #机器人与目标之间的距离（米）停止考虑前锋并允许目标批评家接管。
+      # Option to replace Cost and use Obstacles instead
+
+      PathAlignCritic:  #PathAlignCritic会激励机器人与全局路径保持一致。它不实现路径跟随行为。
+        enabled: true
+        cost_power: 1
+        cost_weight: 25.0 #权重参数
+        max_path_occupancy_ratio: 0.07 #最大路径占用率
+        trajectory_point_step: 4
+        threshold_to_consider: 0.5 #机器人与目标之间的距离阈值，阈值符合则停止考虑路径对齐并允许目标批评家接管。
+        offset_from_furthest: 20 #最远偏移量
+        use_path_orientations: false #是否在路径对齐中考虑路径的方向
+
+      PathAngleCritic: #路径角度评论，机器人在因累积角度误差较大而需要时进行急转弯。
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0 #权重参数
+        offset_from_furthest: 4 #最远偏移量，任何轨迹达到最远路径点之后的路径点数，用于计算相对于的路径角度。
+        threshold_to_consider: 0.5 #机器人与目标之间的距离阈值，阈值符合允许目标批评家接管。
+        max_angle_to_furthest: 1.0 #机器人与目标之间的角距离
+        mode: 0
+
+      PathFollowCritic: #路径跟随评论家激励机器人沿着路径前进。
+        enabled: true
+        cost_power: 1
+        cost_weight: 15.0 #权重参数
+        offset_from_furthest: 5
+        threshold_to_consider: 1.4 #机器人与目标之间的距离阈值，停止考虑路径跟随，并允许目标评论家接管。
+#参数参考：https://docs.nav2.org/configuration/packages/configuring-mppic.html
+
+
+controller_server_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      transform_tolerance: 1.0   # 【新增这一行】允许雷达数据有1秒钟的延迟
+      update_frequency: 5.0  #成本地图更新频率
+      publish_frequency: 2.0 #将成本图发布到话题的频率
+      global_frame: odom_combined      #全局框架
+      robot_base_frame: base_footprint #机器人底座框架
+      use_sim_time: False  #仿真时间
+      rolling_window: true #成本地图是否应随机器人基座框架滚动
+      width: 3             #代价地图的宽度（m）
+      height: 3            #代价地图的高度（m）
+      resolution: 0.05     #代价地图1像素的分辨率，以米为单位
+      #robot_radius: 0.20   #机器人半径，如果未提供足迹坐标，则使用机器人半径。
+      # 物理 42x42，加 2cm 缓冲余量，完美尺寸！
+      footprint: "[ [0.23, 0.23], [-0.23, 0.23], [-0.23, -0.23], [0.23, -0.23] ]"
+      plugins: ["voxel_layer","inflation_layer"] #插件包括:{“体素层”，“膨胀层”}
+      inflation_layer:                             #膨胀层参数
+        plugin: "nav2_costmap_2d::InflationLayer"  #膨胀层插件。
+        cost_scaling_factor: 3.0                   #成本缩放因子，决定障碍物成本随距离的递减速度。
+        inflation_radius: 0.5                    #膨胀半径
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"      
+        enabled: True
+        publish_voxel_map: True
+        origin_z: 0.0                              
+        z_resolution: 0.05                         
+        z_voxels: 16                               
+        max_obstacle_height: 2.0                   
+        mark_threshold: 0                          
+        
+        # 【核心】：同时接入雷达和相机的 3D 点云
+        observation_sources: scan camera                 
+        
+        # --- 雷达配置 ---
+        # 雷达高度 0.23m。主要负责探测中远距离的墙壁和家具轮廓。
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0                  
+          min_obstacle_height: 0.15 # 【新增】忽略雷达高度(0.23m)下方的噪点，防止它把底盘反光当成障碍物
+          clearing: True                            
+          marking: True                             
+          data_type: "LaserScan"                    
+          raytrace_max_range: 10.0                  
+          raytrace_min_range: 0.01   # 【修改】忽略 10 厘米以内的点，防止扫到车体自己                  
+          obstacle_max_range: 2.5                   
+          obstacle_min_range: 0.1                   
+        
+        # --- 相机 3D 点云配置 ---
+        # 相机高度 0.2m。它是扫地僧，专门对付低矮障碍物（拖鞋、纸箱、甚至宠物）
+        camera:
+          topic: /camera/depth/color/points
+          
+          # 【最关键的两个高度参数】
+          # 相机装在 20 厘米高。为了防低矮障碍，我们只看地面（0.03m）到相机上方一点（0.5m）这个区间。
+          max_obstacle_height: 0.5   
+          
+          # 【防误报核心】忽略 3 厘米以下的地面点。
+          # 如果这个值设为 0，相机很容易把稍微不平的地板或地毯误认为是一堵密不透风的“点云墙”，导致小车卡死不动。
+          min_obstacle_height: 0.15
+          
+          clearing: True
+          marking: True
+          data_type: "PointCloud2"
+          
+          # 相机视野有限，太远的点云不准，只信任 2.5 米以内的 3D 点
+          obstacle_max_range: 2.5
+          raytrace_max_range: 3.0
+
+      always_send_full_costmap: True                 #是否每次更新时都发送完整的成本图，而不是更新
+  local_costmap_client:
+    ros__parameters:
+      use_sim_time: False
+  local_costmap_rclcpp_node:
+    ros__parameters:
+      use_sim_time: False
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      transform_tolerance: 1.0
+      update_frequency: 1.0             #成本地图更新频率
+      publish_frequency: 1.0            #将成本图发布到话题的频率
+      global_frame: map                 #全局框架
+      robot_base_frame: base_footprint  #机器人底座框架
+      use_sim_time: False               #仿真时间 
+      #robot_radius: 0.30                #机器人半径
+      # 物理 42x42，加 2cm 缓冲余量，完美尺寸！
+      footprint: "[ [0.23, 0.23], [-0.23, 0.23], [-0.23, -0.23], [0.23, -0.23] ]"
+      resolution: 0.05                  #全局地图1像素的分辨率，以米为单位
+      track_unknown_space: true
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"] #插件包括：{“静态层”，“障碍层”，“膨胀层”}
+      obstacle_layer:  #障碍层参数
+        plugin: "nav2_costmap_2d::ObstacleLayer" #障碍层插件
+        enabled: True
+        observation_sources: scan                  #观测源
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0                 #可检测障碍物的最大高度（米）
+          clearing: True                           #是否启用障碍物清除功能
+          marking: True                            #是否启用障碍物标记功能
+          data_type: "LaserScan"                   #数据类型
+          raytrace_max_range: 10.0                 #控制光线追踪从代价地图中清除障碍物的最大范围 
+          raytrace_min_range: 0.0                  #控制光线追踪从代价地图中清除障碍物的最大范围 
+          obstacle_max_range: 2.5                  #控制代价地图上标记障碍物的最大范围
+          obstacle_min_range: 0.0                  #控制代价地图上标记障碍物的最小范围
+      static_layer: #静态层参数
+        plugin: "nav2_costmap_2d::StaticLayer"     #静态层插件
+        map_subscribe_transient_local: True
+      inflation_layer: #膨胀层参数
+        plugin: "nav2_costmap_2d::InflationLayer"  #膨胀层插件
+        cost_scaling_factor: 5.0                   #成本缩放因子，决定障碍物成本随距离的递减速度。
+        inflation_radius: 0.8                   #膨胀半径
+      always_send_full_costmap: True               #是否每次更新时都发送完整的成本图，而不是更新
+  global_costmap_client:
+    ros__parameters:
+      use_sim_time: False
+  global_costmap_rclcpp_node:
+    ros__parameters:
+      use_sim_time: False
+
+map_server:
+  ros__parameters:
+    use_sim_time: False
+    yaml_filename: "WHEELTEC.yaml"
+
+map_saver:
+  ros__parameters:
+    use_sim_time: False
+    save_map_timeout: 5.0                #尝试保存地图的超时时间（秒）
+    free_thresh_default: 0.25            #占用网格的自由空间最大概率阈值
+    occupied_thresh_default: 0.65        #占用网格的占用空间最小概率阈值
+    map_subscribe_transient_local: True  #地图话题的 QoS 设置
+
+
+planner_server: #规划器服务器参数
+  ros__parameters:
+    expected_planner_frequency: 20.0     #预期的规划器频率。如果当前频率小于预期频率，则显示警告消息。
+    use_sim_time: False
+    planner_plugins: ["GridBased"] #规划器插件类型，需要与BT Tree文件匹配
+    GridBased:
+      # plugin: "nav2_navfn_planner/NavfnPlanner"
+      plugin: "nav2_smac_planner/SmacPlanner2D"
+      tolerance: 0.5
+      allow_unknown: true
+      smooth_path: True
+
+planner_server_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: False
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 0.1  #TF transform tolerance.
+      max_its: 1000
+      do_refinement: True
+
+# behavior_server:
+#   ros__parameters:
+#     costmap_topic: local_costmap/costmap_raw           #用于在局部代价地图上进行碰撞检查的原始代价地图主题。
+#     footprint_topic: local_costmap/published_footprint #局部代价地图框架中的足迹主题。
+#     cycle_frequency: 10.0 #运行行为插件的频率。
+#     behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"] #插件包括：{“旋转”、“后退”、“前进”、“等待”}
+#     spin:
+#       plugin: "nav2_behaviors/Spin"
+#     backup:
+#       plugin: "nav2_behaviors/BackUp"
+#     drive_on_heading:
+#       plugin: "nav2_behaviors/DriveOnHeading"
+#     wait:
+#       plugin: "nav2_behaviors/Wait"
+#     global_frame: odom_combined
+#     robot_base_frame: base_footprint
+#     transform_tolerance: 0.1 #TF 变换容差
+#     use_sim_time: False
+#     simulate_ahead_time: 2.0 #提前模拟
+#     max_rotational_vel: 0.3  #最大旋转速度（弧度/秒）
+#     min_rotational_vel: 0.05 #最小旋转速度（弧度/秒）
+#     rotational_acc_lim: 0.3  #最大旋转加速度（rad/s^2）
+
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: False
+
+waypoint_follower:
+  ros__parameters:
+    loop_rate: 20 #循环速率
+    stop_on_failure: false #如果单个航点失败，是否使操作任务失败。如果为 false，将继续到下一个航点。
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
+      waypoint_pause_duration: 200 #机器人到达每个航点后休眠/等待的时间（以毫秒为单位）
+#waypoint_follower 参数参考
+#https://docs.nav2.org/configuration/packages/configuring-waypoint-follower.html?highlight=stop_on_failure
+
+
+
+===== /home/nvidia/wheeltec_ros2/src/wheeltec_robot_rrt2/launch/rrt_exploration/wheeltec_rrt_slam.launch.py =====
+import os
+from launch import LaunchDescription
+from launch.substitutions import LaunchConfiguration
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python import get_package_share_directory
+from launch_ros.actions import Node
+
+def generate_launch_description():
+
+     use_sim_time = LaunchConfiguration('use_sim_time', default=False)
+     use_sim_time_arg = DeclareLaunchArgument('use_sim_time', default_value=use_sim_time)
+     
+     wheeltec_rrt_dir = get_package_share_directory('wheeltec_robot_rrt')
+     # 【修改 1】：把你之前调教好的 rtabmap 导航参数目录找出来
+     wheeltec_rtab_dir = get_package_share_directory('wheeltec_robot_rtab')
+     
+     # 【核心修改 2】：改造 Nav2 的启动
+     # 我们不再让它启动官方默认的导航，而是启动我们定制好的 RTAB-Map 导航架构
+     nav2_include = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+               # 注意：这里调用的是 Nav2 官方的 bringup，非常纯净
+               os.path.join(get_package_share_directory('nav2_bringup'), 'launch', 'navigation_launch.py')),
+               launch_arguments={
+                              # 'slam': "False",  <-- Nav2 专心导航，不抢建图的活
+                              'use_sim_time': use_sim_time,
+                              # 【强制使用你的 50x50 避障参数】
+                              'params_file': os.path.join(wheeltec_rtab_dir, 'params', 'rtabmap_nav_params.yaml'),
+                              'autostart': 'True'
+                              }.items()
+     )
+
+     rrt_exploration = IncludeLaunchDescription(
+          PythonLaunchDescriptionSource(
+               os.path.join(wheeltec_rrt_dir, 'launch', 'rrt_exploration', 'rrt_exploration.launch.py')
+          ),
+     )
+     
+     # 【修改 3】：完全注释掉官方的 slam_toolbox，因为我们会自己开 RTAB-Map
+     # wheeltec_slam = IncludeLaunchDescription(...)
+     
+     action_servers = IncludeLaunchDescription(
+          PythonLaunchDescriptionSource(
+               os.path.join(wheeltec_rrt_dir, 'launch', 'rrt_exploration','action_servers.launch.py')
+          )
+     )
+
+     robot_picker = Node(
+               package='wheeltec_robot_rrt',
+               executable='robot_picker',
+               name='robot_picker',
+               parameters=[{'bt_xml_filename':os.path.join(wheeltec_rrt_dir, 'behaviour_trees', 'robot_picker_behaviour_tree.xml')}])
+
+     robot_pose_publisher = Node(
+            package='wheeltec_robot_rrt',
+            executable='robot_pose_publisher',
+            name='robot_pose_publisher',
+            )
+            
+     return LaunchDescription([
+          #wheeltec_slam,  <-- 保持注释
+          nav2_include,
+          rrt_exploration,
+          action_servers,
+          robot_picker,
+          robot_pose_publisher,
+          use_sim_time_arg
+     ])
+
+
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/turn_on_wheeltec_robot.launch.py =====
+import os
+from pathlib import Path
+import launch
+from launch.actions import SetEnvironmentVariable
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import (DeclareLaunchArgument, GroupAction,
+                            IncludeLaunchDescription, SetEnvironmentVariable)
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch_ros.actions import PushRosNamespace
+import launch_ros.actions
+from launch.conditions import IfCondition
+from launch.conditions import UnlessCondition
+
+def generate_launch_description():
+    # Get the launch directory
+    bringup_dir = get_package_share_directory('turn_on_wheeltec_robot')
+    launch_dir = os.path.join(bringup_dir, 'launch')
+        
+    ekf_config = Path(get_package_share_directory('turn_on_wheeltec_robot'), 'config', 'ekf.yaml')
+    ekf_carto_config = Path(get_package_share_directory('turn_on_wheeltec_robot'), 'config', 'ekf_carto.yaml')
+
+    imu_config = Path(get_package_share_directory('turn_on_wheeltec_robot'), 'config', 'imu.yaml')
+
+    
+    carto_slam = LaunchConfiguration('carto_slam', default='false')
+    
+    carto_slam_dec = DeclareLaunchArgument('carto_slam',default_value='false')
+            
+    wheeltec_robot = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'base_serial.launch.py')),
+    )
+     
+    robot_ekf = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'wheeltec_ekf.launch.py')),
+            launch_arguments={'carto_slam':carto_slam}.items(),            
+    )
+    #Modify the z-axis transformation parameters of the base_to_link node according to the vehicle model:
+    #(r3s_mec,0.02027), (r3s_4wd,0.01463), 
+    #(mini_akm,0.0216), (mini_diff,0.01563),(mini_tank,0.03715), (mini_mec,0.07258), (mini_omni,0.06542), (mini_4wd,0.0682),
+    #(brushless_senior_diff,0.07348), (S100_diff,0.0277), 
+    #(senior_akm,0.03826), (senior_mec_bs,0.02391), (senior_4wd_bs,0.04994), (senior_omni,0.09016),
+    #(senior_mec_dl,0.05882), (senior_4wd_dl,0.05823),(senior_diff,0.0374),  
+    #(top_akm_bs,0.049), (top_mec_bs,0.05274), (top_4wd_bs,0.08786), (top_omni,0.0192), (top_akm_dl,0.11744), 
+    #(top_mec_dl,0.03802), (top_4wd_dl,0.07454), (top_mec_EightDrive,0.03553),
+    #(flagship_mec_bs,0.11274), (four_wheel_diff_bs,0.14153),(four_wheel_diff_dl,0.06887), 
+    #(flagship_4wd_bs,0.14917), (flagship_mec_dl,0.03816), (flagship_4wd_dl_robot,0.07384)  
+    #e.g. 'minibot_type:mini_akm'
+    #arguments=['0', '0', '0.0216','0', '0','0','base_footprint','base_link'] 
+    base_to_link = launch_ros.actions.Node(
+            package='tf2_ros', 
+            executable='static_transform_publisher', 
+            name='base_to_link',
+            arguments=['0', '0', '0','0', '0','0','base_footprint','base_link'],
+    )
+    base_to_gyro = launch_ros.actions.Node(
+            package='tf2_ros', 
+            executable='static_transform_publisher', 
+            name='base_to_gyro',
+            arguments=['0', '0', '0','0', '0','0','base_footprint','gyro_link'],
+    )
+    
+#     imu_filter_node =  launch_ros.actions.Node(
+#         package='imu_filter_madgwick',
+#         executable='imu_filter_madgwick_node',
+#         parameters=[imu_config]
+#     )
+    
+                           
+    joint_state_publisher_node = launch_ros.actions.Node(
+            package='joint_state_publisher', 
+            executable='joint_state_publisher', 
+            name='joint_state_publisher',
+    )
+    
+    #select a robot model,the default model is mini_mec 
+    #minibot.launch.py contains commonly used robot models
+    #launch_arguments choices:r3s_mec/r3s_4wd/mini_mec/mini_akm/mini_tank/mini_4wd/mini_diff/mini_omni/brushless_senior_diff
+    #!!!At the same time, you need to modify ld.add_action(minibot_type) and #ld.add_action(flagship_type)
+    minibot_type = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'robot_mode_description_minibot.launch.py')),
+            launch_arguments={'senior_mec_bs': 'true'}.items(),
+    )
+
+
+    #robot_mode_description.launch.py contains flagship products, usually larger chassis robots
+    #launch_arguments choices:
+
+    #senior_akm/top_akm_bs/top_akm_dl
+    #senior_mec_bs/senior_mec_dl/top_mec_bs/top_mec_dl/ mec_EightDrive_robot/flagship_mec_bs_robot/flagship_mec_dl_robot??
+    #senior_omni/top_omni
+    #senior_4wd_bs_robot/senior_4wd_dl_robot/flagship_4wd_bs_robot/flagship_4wd_dl_robot/top_4wd_bs_robot/top_4wd_dl_robot
+    #senior_diff_robot/four_wheel_diff_bs/four_wheel_diff_dl/flagship_four_wheel_diff_bs_robot/flagship_four_wheel_diff_dl_robot
+    #!!!At the same time, you need to modify ld.add_action(flagship_type) and #ld.add_action(minibot_type)
+    flagship_type = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'robot_mode_description.launch.py')),
+            launch_arguments={'senior_mec_bs': 'true'}.items(),
+    )
+    
+    ld = LaunchDescription()
+
+    ld.add_action(minibot_type)
+    #ld.add_action(flagship_type)
+    ld.add_action(carto_slam_dec)
+    ld.add_action(wheeltec_robot)
+    ld.add_action(base_to_link)
+    ld.add_action(base_to_gyro)
+    ld.add_action(joint_state_publisher_node)
+#     ld.add_action(imu_filter_node)    
+    ld.add_action(robot_ekf)
+
+    return ld
+
+
+
+
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/base_serial.launch.py =====
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+from launch.conditions import UnlessCondition
+import launch_ros.actions
+
+#def launch(launch_descriptor, argv):
+def generate_launch_description():
+
+
+    akmcar = LaunchConfiguration('akmcar', default='true')
+    return LaunchDescription([
+        launch_ros.actions.Node(
+            package='turn_on_wheeltec_robot', 
+            executable='wheeltec_robot_node', 
+            output='screen',
+            parameters=[{'usart_port_name': '/dev/wheeltec_controller',
+                'serial_baud_rate': 115200,
+                'robot_frame_id': 'base_footprint',
+                'odom_frame_id': 'odom',
+                'cmd_vel': 'cmd_vel',
+                'akm_cmd_vel': 'none',
+                'product_number': 0,
+                'odom_x_scale': 1.0,
+                'odom_y_scale': 1.0,
+                'odom_z_scale_positive': 1.0,
+                'odom_z_scale_negative': 1.0}],
+            )
+
+
+  ])
+
+
+
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_ekf.launch.py =====
+import os
+from pathlib import Path
+from launch import LaunchDescription
+from ament_index_python.packages import get_package_share_directory
+import launch_ros.actions
+from launch.substitutions import EnvironmentVariable
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.conditions import UnlessCondition
+
+
+def generate_launch_description():
+    ekf_config = Path(get_package_share_directory('turn_on_wheeltec_robot'), 'config', 'ekf.yaml')
+    ekf_carto_config = Path(get_package_share_directory('turn_on_wheeltec_robot'), 'config', 'ekf_carto.yaml')
+
+    carto_slam = LaunchConfiguration('carto_slam', default='false')
+    carto_slam_dec = DeclareLaunchArgument('carto_slam',default_value='false')
+             
+    return LaunchDescription([
+    carto_slam_dec,
+            Node(
+                condition=IfCondition(carto_slam),
+                package='robot_localization',
+                executable='ekf_node',
+                name='carto_ekf_filter_node',
+                parameters=[ekf_carto_config],
+                remappings=[('/odometry/filtered','odom_combined')]
+               ),
+
+            Node(
+                condition=UnlessCondition(carto_slam),
+                package='robot_localization',
+                executable='ekf_node',
+                name='ekf_filter_node',
+                parameters=[ekf_config],
+                remappings=[('/odometry/filtered','odom_combined')]
+               ),
+])
+
+
+
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/config/imu.yaml =====
+imu_filter_madgwick:
+    ros__parameters:
+        fixed_frame: "base_footprint"
+        use_mag: false
+        publish_tf: false
+        world_frame: "enu"
+        orientation_stddev: 0.05
+
+
+
+===== /home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/config/ekf.yaml =====
+### ekf config file ###
+ekf_filter_node:
+    ros__parameters:
+# The frequency, in Hz, at which the filter will output a position estimate. Note that the filter will not begin
+# computation until it receives at least one message from one of the inputs. It will then run continuously at the
+# frequency specified here, regardless of whether it receives more measurements. Defaults to 30 if unspecified.
+        frequency: 30.0
+
+# The period, in seconds, after which we consider a sensor to have timed out. In this event, we carry out a predict
+# cycle on the EKF without correcting it. This parameter can be thought of as the minimum frequency with which the
+# filter will generate new output. Defaults to 1 / frequency if not specified.
+        sensor_timeout: 2.0
+
+# ekf_localization_node and ukf_localization_node both use a 3D omnidirectional motion model. If this parameter is
+# set to true, no 3D information will be used in your state estimate. Use this if you are operating in a planar
+# environment and want to ignore the effect of small variations in the ground plane that might otherwise be detected
+# by, for example, an IMU. Defaults to false if unspecified.
+        two_d_mode: true
+
+# Use this parameter to provide an offset to the transform generated by ekf_localization_node. This can be used for
+# future dating the transform, which is required for interaction with some other packages. Defaults to 0.0 if
+# unspecified.
+        transform_time_offset: 0.0
+
+# Use this parameter to provide specify how long the tf listener should wait for a transform to become available. 
+# Defaults to 0.0 if unspecified.
+        transform_timeout: 0.2
+
+# If you're having trouble, try setting this to true, and then echo the /diagnostics_agg topic to see if the node is
+# unhappy with any settings or data.
+        print_diagnostics: false
+
+# Debug settings. Not for the faint of heart. Outputs a ludicrous amount of information to the file specified by
+# debug_out_file. I hope you like matrices! Please note that setting this to true will have strongly deleterious
+# effects on the performance of the node. Defaults to false if unspecified.
+        debug: false
+
+# Defaults to "robot_localization_debug.txt" if unspecified. Please specify the full path.
+        debug_out_file: /path/to/debug/file.txt
+
+# Whether to broadcast the transformation over the /tf topic. Defaults to true if unspecified.
+        publish_tf: true
+
+# Whether to publish the acceleration state. Defaults to false if unspecified.
+        publish_acceleration: false
+
+# REP-105 (http://www.ros.org/reps/rep-0105.html) specifies four principal coordinate frames: base_link, odom, map, and
+# earth. base_link is the coordinate frame that is affixed to the robot. Both odom and map are world-fixed frames.
+# The robot's position in the odom frame will drift over time, but is accurate in the short term and should be
+# continuous. The odom frame is therefore the best frame for executing local motion plans. The map frame, like the odom
+# frame, is a world-fixed coordinate frame, and while it contains the most globally accurate position estimate for your
+# robot, it is subject to discrete jumps, e.g., due to the fusion of GPS data or a correction from a map-based
+# localization node. The earth frame is used to relate multiple map frames by giving them a common reference frame.
+# ekf_localization_node and ukf_localization_node are not concerned with the earth frame.
+# Here is how to use the following settings:
+# 1. Set the map_frame, odom_frame, and base_link frames to the appropriate frame names for your system.
+#     1a. If your system does not have a map_frame, just remove it, and make sure "world_frame" is set to the value of
+#         odom_frame.
+# 2. If you are fusing continuous position data such as wheel encoder odometry, visual odometry, or IMU data, set
+#   "world_frame" to your odom_frame value. This is the default behavior for robot_localization's state estimation nodes.
+# 3. If you are fusing global absolute position data that is subject to discrete jumps (e.g., GPS or position updates
+# from landmark observations) then:
+#     3a. Set your "world_frame" to your map_frame value
+#     3b. MAKE SURE something else is generating the odom->base_link transform. Note that this can even be another state
+#         estimation node from robot_localization! However, that instance should *not* fuse the global data.
+        map_frame: map              # Defaults to "map" if unspecified
+        odom_frame: odom_combined            # Defaults to "odom" if unspecified
+        base_link_frame: base_footprint  # Defaults to "base_link" if unspecified
+        world_frame: odom_combined           # Defaults to the value of odom_frame if unspecified
+
+# The filter accepts an arbitrary number of inputs from each input message type (nav_msgs/Odometry,
+# geometry_msgs/PoseWithCovarianceStamped, geometry_msgs/TwistWithCovarianceStamped,
+# sensor_msgs/Imu). To add an input, simply append the next number in the sequence to its "base" name, e.g., odom0,
+# odom1, twist0, twist1, imu0, imu1, imu2, etc. The value should be the topic name. These parameters obviously have no
+# default values, and must be specified.
+        odom0: odom
+# Each sensor reading updates some or all of the filter's state. These options give you greater control over which
+# values from each measurement are fed to the filter. For example, if you have an odometry message as input, but only
+# want to use its Z position value, then set the entire vector to false, except for the third entry. The order of the
+# values is x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az. Note that not some message types
+# do not provide some of the state variables estimated by the filter. For example, a TwistWithCovarianceStamped message
+# has no pose information, so the first six values would be meaningless in that case. Each vector defaults to all false
+# if unspecified, effectively making this parameter required for each sensor.
+        odom0_config: [false, false, false,
+                       false, false, false,
+                       true,  true,  false,
+                       false, false, true,
+                       false, false, false]
+
+# If you have high-frequency data or are running with a low frequency parameter value, then you may want to increase
+# the size of the subscription queue so that more measurements are fused.
+        odom0_queue_size: 1
+
+# [ADVANCED] Large messages in ROS can exhibit strange behavior when they arrive at a high frequency. This is a result
+# of Nagle's algorithm. This option tells the ROS subscriber to use the tcpNoDelay option, which disables Nagle's
+# algorithm.
+        odom0_nodelay: false
+
+# [ADVANCED] When measuring one pose variable with two sensors, a situation can arise in which both sensors under-
+# report their covariances. This can lead to the filter rapidly jumping back and forth between each measurement as they
+# arrive. In these cases, it often makes sense to (a) correct the measurement covariances, or (b) if velocity is also
+# measured by one of the sensors, let one sensor measure pose, and the other velocity. However, doing (a) or (b) isn't
+# always feasible, and so we expose the differential parameter. When differential mode is enabled, all absolute pose
+# data is converted to velocity data by differentiating the absolute pose measurements. These velocities are then
+# integrated as usual. NOTE: this only applies to sensors that provide pose measurements; setting differential to true
+# for twist measurements has no effect.
+        odom0_differential: true
+
+# [ADVANCED] When the node starts, if this parameter is true, then the first measurement is treated as a "zero point"
+# for all future measurements. While you can achieve the same effect with the differential paremeter, the key
+# difference is that the relative parameter doesn't cause the measurement to be converted to a velocity before
+# integrating it. If you simply want your measurements to start at 0 for a given sensor, set this to true.
+        odom0_relative: false
+
+# [ADVANCED] If your data is subject to outliers, use these threshold settings, expressed as Mahalanobis distances, to
+# control how far away from the current vehicle state a sensor measurement is permitted to be. Each defaults to
+# numeric_limits<double>::max() if unspecified. It is strongly recommended that these parameters be removed if not
+# required. Data is specified at the level of pose and twist variables, rather than for each variable in isolation.
+# For messages that have both pose and twist data, the parameter specifies to which part of the message we are applying
+# the thresholds.
+#         odom0_pose_rejection_threshold: 5.0
+#         odom0_twist_rejection_threshold: 1.0
+
+        imu0: /imu
+        imu0_config: [false, false, false,
+                      false, false, true,
+                      false, false, false,
+                      false, false, true,
+                      false,  false, false]
+
+        imu0_nodelay: false
+        imu0_differential: false
+        imu0_relative: true
+        imu0_queue_size: 10
+        imu0_pose_rejection_threshold: 20.0                 # Note the difference in parameter names
+        imu0_twist_rejection_threshold: 1.542                #
+        imu0_linear_acceleration_rejection_threshold: 10.0  #
+
+# [ADVANCED] Some IMUs automatically remove acceleration due to gravity, and others don't. If yours doesn't, please set
+# this to true, and *make sure* your data conforms to REP-103, specifically, that the data is in ENU frame.
+        imu0_remove_gravitational_acceleration: true
+
+# [ADVANCED]  The EKF and UKF models follow a standard predict/correct cycle. During prediction, if there is no
+# acceleration reference, the velocity at time t+1 is simply predicted to be the same as the velocity at time t. During
+# correction, this predicted value is fused with the measured value to produce the new velocity estimate. This can be
+# problematic, as the final velocity will effectively be a weighted average of the old velocity and the new one. When
+# this velocity is the integrated into a new pose, the result can be sluggish covergence. This effect is especially
+# noticeable with LIDAR data during rotations. To get around it, users can try inflating the process_noise_covariance
+# for the velocity variable in question, or decrease the  variance of the variable in question in the measurement
+# itself. In addition, users can also take advantage of the control command being issued to the robot at the time we
+# make the prediction. If control is used, it will get converted into an acceleration term, which will be used during
+# predicition. Note that if an acceleration measurement for the variable in question is available from one of the
+# inputs, the control term will be ignored.
+# Whether or not we use the control input during predicition. Defaults to false.
+        use_control: false
+# Whether the input (assumed to be cmd_vel) is a geometry_msgs/Twist or geometry_msgs/TwistStamped message. Defaults to
+# false.
+        stamped_control: false
+# The last issued control command will be used in prediction for this period. Defaults to 0.2.
+        control_timeout: 0.2
+# Which velocities are being controlled. Order is vx, vy, vz, vroll, vpitch, vyaw.
+        control_config: [true, false, false, false, false, true]
+# Places limits on how large the acceleration term will be. Should match your robot's kinematics.
+        acceleration_limits: [1.3, 0.0, 0.0, 0.0, 0.0, 3.4]
+# Acceleration and deceleration limits are not always the same for robots.
+        deceleration_limits: [1.3, 0.0, 0.0, 0.0, 0.0, 4.5]
+# If your robot cannot instantaneously reach its acceleration limit, the permitted change can be controlled with these
+# gains
+        acceleration_gains: [0.8, 0.0, 0.0, 0.0, 0.0, 0.9]
+# If your robot cannot instantaneously reach its deceleration limit, the permitted change can be controlled with these
+# gains
+        deceleration_gains: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+# [ADVANCED] The process noise covariance matrix can be difficult to tune, and can vary for each application, so it is
+# exposed as a configuration parameter. This matrix represents the noise we add to the total error after each
+# prediction step. The better the omnidirectional motion model matches your system, the smaller these values can be.
+# However, if users find that a given variable is slow to converge, one approach is to increase the
+# process_noise_covariance diagonal value for the variable in question, which will cause the filter's predicted error
+# to be larger, which will cause the filter to trust the incoming measurement more during correction. The values are
+# ordered as x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az. Defaults to the matrix below if
+# unspecified.
+        process_noise_covariance: [0.05, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.05, 0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.06, 0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.03, 0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.03, 0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.06, 0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.025, 0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.025, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.04, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.01, 0.0,    0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.01, 0.0,    0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.02, 0.0,    0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.01, 0.0,    0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.01, 0.0,
+                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.015]
+# [ADVANCED] This represents the initial value for the state estimate error covariance matrix. Setting a diagonal
+# value (variance) to a large value will result in rapid convergence for initial measurements of the variable in
+# question. Users should take care not to use large values for variables that will not be measured directly. The values
+# are ordered as x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az. Defaults to the matrix below
+#if unspecified.
+        initial_estimate_covariance: [1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    1e-9, 0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1e-9, 0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1e-9, 0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1e-9, 0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1e-9,  0.0,     0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     1e-9,  0.0,     0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     1e-9,  0.0,    0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     1e-9, 0.0,    0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    1e-9, 0.0,
+                                      0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    1e-9]
+
+
+
+

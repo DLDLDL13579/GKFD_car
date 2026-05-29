@@ -1,0 +1,38 @@
+filter:
+  ros__parameters:
+    map_topic: /map
+    costmap_clearing_threshold: 70
+    info_radius: 1.0
+    goals_topic: /detected_frontiers
+    global_costmap_topic: /global_costmap/costmap
+    # 【核心添加】：强行改写 filter 节点对 /map 的订阅 Durability 策略
+    qos_overrides./map.subscription.durability: "transient_local"
+
+assigner:
+  ros__parameters:
+    map_topic: /map
+    info_radius: 1.0
+    info_multiplier: 3.0
+    hysteresis_radius: 3.0
+    hysteresis_gain: 2.0
+    frontiers_topic: /filtered_goal_points
+    # 【核心添加】：强行改写 assigner 节点对 /map 的订阅 Durability 策略
+    qos_overrides./map.subscription.durability: "transient_local"
+
+# 注意：为了确保彻底打通，还需要在这里显式补充 global_rrt 和 local_rrt 的配置
+global_rrt:
+  ros__parameters:
+    qos_overrides./map.subscription.durability: "transient_local"
+
+local_rrt:
+  ros__parameters:
+    qos_overrides./map.subscription.durability: "transient_local"
+
+# # anti_clockwise
+# boundry_publisher:
+#   ros__parameters:
+#     x1y1: 
+#     x2y2:
+#     x3y3:
+#     x4y4:
+#     start_coordinates:
