@@ -9,7 +9,7 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.actions import PushRosNamespace
 from nav2_common.launch import RewrittenYaml
-
+from launch.actions import TimerAction
 
 def generate_launch_description():
     # Get the launch directory
@@ -93,14 +93,29 @@ def generate_launch_description():
     }
     # ==========================================
 
+    # 1. 立即启动底盘
     wheeltec_robot = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(wheeltec_bringup_dir, 'launch','turn_on_wheeltec_robot.launch.py')),
     )
-    wheeltec_lidar = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(wheeltec_bringup_dir, 'launch', 'wheeltec_lidar.launch.py')),
+    
+    # 2. 延迟 3 秒启动雷达
+    wheeltec_lidar = TimerAction(
+        period=3.0, 
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(wheeltec_bringup_dir, 'launch', 'wheeltec_lidar.launch.py'))
+            )
+        ]
     )
-    wheeltec_camera = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(wheeltec_bringup_dir, 'launch', 'wheeltec_camera.launch.py')),
+    
+    # 3. 延迟 6 秒启动高功耗的深度相机
+    wheeltec_camera = TimerAction(
+        period=6.0, 
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(wheeltec_bringup_dir, 'launch', 'wheeltec_camera.launch.py'))
+            )
+        ]
     )
   
     # Create our own temporary YAML files that include substitutions
@@ -171,7 +186,13 @@ def generate_launch_description():
 
     # Set environment variables
     ld.add_action(stdout_linebuf_envvar)
-    
+    base_to_laser_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='base_to_laser_tf',
+        arguments=['0.11', '0.0', '0.21', '0.0', '0.0', '0.0', 'base_link', 'laser']
+    )
+    ld.add_action(base_to_laser_tf)
     # 声明所有参数
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)

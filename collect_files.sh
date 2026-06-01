@@ -18,6 +18,7 @@ FILES=(
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_ekf.launch.py"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/config/imu.yaml"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/config/ekf.yaml"
+    "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/launch/wheeltec_nav2_rtab.launch.py"
 )
 
 # 遍历每个文件

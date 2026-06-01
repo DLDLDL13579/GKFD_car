@@ -3,7 +3,12 @@ sudo mount -t nfs 192.168.0.100:/home/wheeltec/wheeltec_ros2 /mnt
 nfs解除挂载:
 sudo umount -t nfs 192.168.0.100:/home/wheeltec/wheeltec_ros2 /mnt
 
-
+运行大模型
+ros2 launch ollama_ros_chat ollama_ros_chat.launch.py
+运行py脚本
+python3 /home/nvidia/wheeltec_ros2/src/ollama_ros_chat/llm_nav_manager.py
+运行自动绘测
+python3 /home/nvidia/wheeltec_ros2/src/ollama_ros_chat/save_location.py
 1、打开机器人底盘
 ros2 launch turn_on_wheeltec_robot turn_on_wheeltec_robot.launch.py
 
