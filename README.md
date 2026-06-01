@@ -98,7 +98,3 @@ source install/setup.bash
 ---
 
 *Powered by ROS2 Humble | Maintained by @DLDLDL13579*
-
-
-### 💡 提交这个文件的步骤：
-你只需要在 VS Code 中点开根目录下的 `README.md`，把以上内容全部粘贴进去，保存。然后在左侧的源代码管理（Git）栏里填写提交信息，点击 **“提交”**，再点击 **“同步更改”** 推送到你的 GitHub 仓库即可。
