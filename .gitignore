@@ -6,4 +6,4 @@ log/
 __pycache__/
 *.db3
 *.bag
-*.db
+*.db*.tgz
