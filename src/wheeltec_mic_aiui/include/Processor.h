@@ -46,7 +46,7 @@
 using namespace aiui_va;
 using namespace aiui_v2;
 
-#define CURRENT_PATH "/home/wheeltec/wheeltec_ros2/src/wheeltec_mic_aiui"
+#define CURRENT_PATH "/home/nvidia/wheeltec_ros2/src/wheeltec_mic_aiui"
 
 IAIUIAgent* g_pAgent = nullptr;
 
