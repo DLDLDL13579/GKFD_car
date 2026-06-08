@@ -13,15 +13,15 @@ ExecStartPre=/usr/bin/pactl set-default-sink alsa_output.usb-C-Media_Electronics
 ExecStartExecStartPre=/bin/sleep 5
 ExecStart=/bin/bash -c "\
   source /opt/ros/humble/setup.bash && \
-  source /home/nvidia/wheeltec_ros2/install/setup.bash && \
+  source /home/wheeltec/wheeltec_ros2/install/setup.bash && \
   ros2 launch largemodel largemodel_control.launch.py"
   
-WorkingDirectory=/home/nvidia/wheeltec_ros2
+WorkingDirectory=/home/wheeltec/wheeltec_ros2
 # 自动重启策略：意外退出 3 秒后重启，永远重试
 Restart=always
 RestartSec=3
 # 把 stdout/stderr 重定向到日志
-StandardOutput=append:/home/nvidia/wheeltec_ros2/log/largemodel.log
+StandardOutput=append:/home/wheeltec/wheeltec_ros2/log/largemodel.log
 StandardError=inherit
 [Install]
 WantedBy=multi-user.target
