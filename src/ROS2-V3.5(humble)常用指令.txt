@@ -1,7 +1,7 @@
 nfs挂载:
-sudo mount -t nfs 192.168.0.100:/home/wheeltec/wheeltec_ros2 /mnt
+sudo mount -t nfs 192.168.0.100:/home/nvidia/wheeltec_ros2 /mnt
 nfs解除挂载:
-sudo umount -t nfs 192.168.0.100:/home/wheeltec/wheeltec_ros2 /mnt
+sudo umount -t nfs 192.168.0.100:/home/nvidia/wheeltec_ros2 /mnt
 
 运行大模型
 ros2 launch ollama_ros_chat ollama_ros_chat.launch.py
@@ -175,7 +175,7 @@ ssh -Y wheeltec@192.168.0.100
 sudo chmod -R 777 文件夹
 
 8、打开地图路径：
-cd /home/wheeltec/wheeltec_ros2/src/wheeltec_robot_nav2/map
+cd /home/nvidia/wheeltec_ros2/src/wheeltec_robot_nav2/map
 手动保存地图：
 ros2 run nav2_map_server map_saver_cli -f ~/map
 

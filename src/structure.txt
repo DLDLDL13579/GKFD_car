@@ -1504,6 +1504,46 @@
 │       ├── source.Dockerfile
 │       ├── underlay.repos
 │       └── update_bt_diagrams.bash
+├── ollama_ros_chat
+│   ├── 如何申请通义千问的大模型API_KEY.pdf
+│   ├── llm_nav_manager.py
+│   ├── locations.json
+│   ├── ollama_ros_chat
+│   │   ├── config
+│   │   │   └── ollama_params.yaml
+│   │   ├── launch
+│   │   │   └── ollama_ros_chat.launch.py
+│   │   ├── ollama_ros_chat
+│   │   │   ├── __init__.py
+│   │   │   ├── ollama_client.py
+│   │   │   ├── ollama_service.py
+│   │   │   ├── ollama_topic_client.py
+│   │   │   ├── ollama_topic_server.py
+│   │   │   └── __pycache__
+│   │   │       ├── __init__.cpython-310.pyc
+│   │   │       ├── ollama_client.cpython-310.pyc
+│   │   │       ├── ollama_service.cpython-310.pyc
+│   │   │       ├── ollama_topic_client.cpython-310.pyc
+│   │   │       └── ollama_topic_server.cpython-310.pyc
+│   │   ├── package.xml
+│   │   ├── resource
+│   │   │   └── ollama_ros_chat
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── test
+│   │       ├── test_copyright.py
+│   │       ├── test_flake8.py
+│   │       └── test_pep257.py
+│   ├── ollama_ros_msgs
+│   │   ├── CMakeLists.txt
+│   │   ├── include
+│   │   │   └── ollama_ros_msgs
+│   │   ├── package.xml
+│   │   ├── src
+│   │   └── srv
+│   │       └── Chat.srv
+│   ├── readme.md
+│   └── save_location.py
 ├── qt_ros_test
 │   ├── CMakeLists.txt
 │   ├── include
@@ -4047,4 +4087,4 @@
     │   └── wheeltec.rviz
     └── src
 
-752 directories, 3295 files
+765 directories, 3322 files

@@ -10,7 +10,7 @@ include_directories(
 )
 
 link_directories(
-  libs/x64
+  libs/arm64
 )
 
 install(DIRECTORY launch config 

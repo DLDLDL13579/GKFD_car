@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="mecanum_pro_final">
+
+  <material name="alu_plate"><color rgba="0.8 0.8 0.8 1.0"/></material>
+  <material name="standoff"><color rgba="0.6 0.6 0.6 1.0"/></material>
+  <material name="wheel_dark"><color rgba="0.2 0.2 0.2 1.0"/></material>
+  <material name="axle_metal"><color rgba="0.4 0.4 0.4 1.0"/></material>
+  <material name="sensor_cam"><color rgba="0.7 0.7 0.8 1.0"/></material>
+  <material name="sensor_lidar"><color rgba="0.1 0.1 0.1 1.0"/></material>
+
+  <link name="base_footprint"/>
+  
+  <link name="base_link_hub"/> 
+
+  <link name="layer1_bottom"><visual><geometry><box size="0.39 0.23 0.003"/></geometry><material name="alu_plate"/></visual></link>
+  <link name="layer2_mid"><visual><geometry><box size="0.39 0.23 0.003"/></geometry><material name="alu_plate"/></visual></link>
+  <link name="layer3_top"><visual><geometry><box size="0.39 0.23 0.003"/></geometry><material name="alu_plate"/></visual></link>
+
+  <link name="standoffs_lower"><visual><geometry><box size="0.36 0.20 0.07"/></geometry><material name="standoff"/></visual></link>
+  <link name="standoffs_upper"><visual><geometry><box size="0.36 0.20 0.10"/></geometry><material name="standoff"/></visual></link>
+
+  <link name="axle_fl"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.006" length="0.07"/></geometry><material name="axle_metal"/></visual></link>
+  <link name="axle_fr"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.006" length="0.07"/></geometry><material name="axle_metal"/></visual></link>
+  <link name="axle_bl"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.006" length="0.07"/></geometry><material name="axle_metal"/></visual></link>
+  <link name="axle_br"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.006" length="0.07"/></geometry><material name="axle_metal"/></visual></link>
+
+  <link name="wheel_fl"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.05" length="0.05"/></geometry><material name="wheel_dark"/></visual></link>
+  <link name="wheel_fr"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.05" length="0.05"/></geometry><material name="wheel_dark"/></visual></link>
+  <link name="wheel_bl"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.05" length="0.05"/></geometry><material name="wheel_dark"/></visual></link>
+  <link name="wheel_br"><visual><origin rpy="1.5708 0 0"/><geometry><cylinder radius="0.05" length="0.05"/></geometry><material name="wheel_dark"/></visual></link>
+
+  <link name="camera_link"><visual><geometry><box size="0.03 0.12 0.028"/></geometry><material name="sensor_cam"/></visual></link>
+  <link name="laser_link"><visual><geometry><cylinder radius="0.025" length="0.08"/></geometry><material name="sensor_lidar"/></visual></link>
+
+
+  <joint name="footprint_to_hub" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link_hub"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="axle_fl_joint" type="fixed"><parent link="base_link_hub"/><child link="axle_fl"/><origin xyz="0.16 0.15 0" rpy="0 0 0"/></joint>
+  <joint name="axle_fr_joint" type="fixed"><parent link="base_link_hub"/><child link="axle_fr"/><origin xyz="0.16 -0.15 0" rpy="0 0 0"/></joint>
+  <joint name="axle_bl_joint" type="fixed"><parent link="base_link_hub"/><child link="axle_bl"/><origin xyz="-0.16 0.15 0" rpy="0 0 0"/></joint>
+  <joint name="axle_br_joint" type="fixed"><parent link="base_link_hub"/><child link="axle_br"/><origin xyz="-0.16 -0.15 0" rpy="0 0 0"/></joint>
+
+  <joint name="wheel_fl_joint" type="continuous"><parent link="base_link_hub"/><child link="wheel_fl"/><origin xyz="0.16 0.185 0" rpy="0 0 0"/><axis xyz="0 1 0"/></joint>
+  <joint name="wheel_fr_joint" type="continuous"><parent link="base_link_hub"/><child link="wheel_fr"/><origin xyz="0.16 -0.185 0" rpy="0 0 0"/><axis xyz="0 1 0"/></joint>
+  <joint name="wheel_bl_joint" type="continuous"><parent link="base_link_hub"/><child link="wheel_bl"/><origin xyz="-0.16 0.185 0" rpy="0 0 0"/><axis xyz="0 1 0"/></joint>
+  <joint name="wheel_br_joint" type="continuous"><parent link="base_link_hub"/><child link="wheel_br"/><origin xyz="-0.16 -0.185 0" rpy="0 0 0"/><axis xyz="0 1 0"/></joint>
+
+  <joint name="layer1_joint" type="fixed"><parent link="base_link_hub"/><child link="layer1_bottom"/><origin xyz="0 0 0.02" rpy="0 0 0"/></joint>
+  <joint name="layer2_joint" type="fixed"><parent link="base_link_hub"/><child link="layer2_mid"/><origin xyz="0 0 0.093" rpy="0 0 0"/></joint>
+  <joint name="layer3_joint" type="fixed"><parent link="base_link_hub"/><child link="layer3_top"/><origin xyz="0 0 0.196" rpy="0 0 0"/></joint>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link_hub"/>
+    <child link="camera_link"/>
+    <origin xyz="0.18 0 0.2115" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link_hub"/>
+    <child link="laser_link"/>
+    <origin xyz="0.085 0 0.2375" rpy="0 0 0"/>
+  </joint>
+
+</robot>
