@@ -1,45 +1,38 @@
-#根据实际的场景环境，自定义地图中的区域，可以添加任意个区域，注意和大模型的地图映射保持一致即可
-#According to the actual scene environment, customize the areas in the map. You can add any number of areas, just make sure they are consistent with the map mapping of the large model
-#地图映射Map mapping
-
-A: 
-  name: '原点起点'
+A:
+  name: 原点起点
   position:
     x: 0.0
     y: 0.0
-    z: 0.0 
+    z: 0.0
   orientation:
     x: 0.0
     y: 0.0
     z: 0.0
     w: 1.0
-
-B: 
-  name: '水果店'
+B:
+  name: 水果店
   position:
     x: 0.75
     y: 0.05
-    z: 0.0 
+    z: 0.0
   orientation:
     x: 0.0
     y: 0.0
     z: 0.0
     w: 1.0
-
-C: 
-  name: '工具间'
+C:
+  name: 工具间
   position:
     x: -0.4
-    y: 1.5 
+    y: 1.5
     z: 0.0
   orientation:
     x: 0.0
     y: 0.0
     z: 0.0
-    w: 1.0  
-
-D: 
-  name: '便利店'
+    w: 1.0
+D:
+  name: 便利店
   position:
     x: 0.75
     y: 1.5
@@ -49,6 +42,36 @@ D:
     y: 0.0
     z: 0.0
     w: 1.0
-
-#此处可新增添加区域对应的栅格地图坐标点，注意和上面格式保持一致
-#Here, you can add the raster map coordinate points corresponding to the added area. Please note that the format should be consistent with the above
+E:
+  name: 充电桩
+  position:
+    x: -0.5566930770874023
+    y: 0.13949039578437805
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: -0.052182226314408525
+    w: 0.9986375795336724
+F:
+  name: 饮水机
+  position:
+    x: 2.5163511972850143
+    y: -1.8881429048390879
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.38602229132747484
+    w: 0.922489452838506
+G:
+  name: 公司前台
+  position:
+    x: 7.525267071875117
+    y: -2.2500859225161496
+    z: 0.0
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 0.9281224562734911
+    w: -0.372275041012504

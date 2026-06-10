@@ -55,12 +55,12 @@ void ImageConverter::Reset() {
 void ImageConverter::Cancel() {
     this->Reset();
     
-    delete RGB_WINDOW;
-    delete DEPTH_WINDOW;
+    // delete RGB_WINDOW;
+    // delete DEPTH_WINDOW;
     //delete this->linear_PID;
     //delete this->angular_PID;
     
-    destroyWindow(RGB_WINDOW);
+    // destroyWindow(RGB_WINDOW);
 //        destroyWindow(DEPTH_WINDOW);
 }
 
@@ -113,9 +113,9 @@ void ImageConverter::imageCb(const std::shared_ptr<sensor_msgs::msg::Image> msg)
     _cv_bridge = cv_bridge::CvImage(_header, sensor_msgs::image_encodings::BGR8, rgbimage);
     _cv_bridge.toImageMsg(kcf_imagemsg);
     image_pub_-> publish(kcf_imagemsg);
-    imshow(RGB_WINDOW, rgbimage);
-    int action = waitKey(1) & 0xFF;
-    if (action == 'q' ) this->Cancel();
+    // imshow(RGB_WINDOW, rgbimage);
+    // int action = waitKey(1) & 0xFF;
+    // if (action == 'q' ) this->Cancel();
 }
 
 void ImageConverter::depthCb(const std::shared_ptr<sensor_msgs::msg::Image> msg) {

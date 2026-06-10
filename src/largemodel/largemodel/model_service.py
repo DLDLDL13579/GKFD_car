@@ -200,7 +200,8 @@ class LargeModelService(Node):
                 )
                 
             else:
-                prompt_seewhat = "机器人反馈:执行seewhat()完成"
+                # 增加了明确的视觉描述指令
+                prompt_seewhat = "机器人反馈:执行seewhat()完成。现在请你仔细观察这张图片，并用自然语言向用户详细描述你在图片中看到了什么周围环境、物品或人物。"
                 raw_content = self.model_client.multimodelinfer(
                     prompt_seewhat+prompt, image_path=self.image_save_path
                 )
@@ -228,12 +229,27 @@ class LargeModelService(Node):
             
     def send_action_service(self, actions, text):
         goal_msg = Progress.Goal()  # 创建目标消息对象 
-        goal_msg.actions = actions  # 设置目标消息中的动作列表 
-        goal_msg.llm_response = text
+        
+        # ====== 新增的安全数据清洗逻辑 ======
+        if actions is None:
+            safe_actions = []
+        elif isinstance(actions, str):
+            # 如果大模型错误地返回了普通字符串，将其包装成列表
+            safe_actions = [actions]
+        elif isinstance(actions, list):
+            # 确保列表里的每一个元素都被强制转换为字符串类型
+            safe_actions = [str(item) for item in actions]
+        else:
+            # 面对其他稀奇古怪的数据结构，一律按空列表处理
+            safe_actions = []
+        # ====================================
+
+        goal_msg.actions = safe_actions  # 安全地设置目标消息中的动作列表 
+        goal_msg.llm_response = str(text) if text else "" # 顺便对 text 字段也做一下字符串强转保护
+        
         self._send_goal_future = self._action_client.send_goal_async(goal_msg,feedback_callback=self.feedback_callback)
         # 添加目标发送后的响应回调函数 
         self._send_goal_future.add_done_callback(self.goal_response_callback)
-
     def goal_response_callback(self, future):
         goal_handle = future.result()  # 获取目标句柄 
         if not goal_handle.accepted:

@@ -91,6 +91,7 @@ class CustomActionServer(Node):
         self.KCF_follow_future = Future()
         self.navigation_future = Future()
         self.slam_future = Future()
+        self.slam_future.set_result(True)
 
         self.interrupt_flag = False  # 打断标志 
         self.action_runing = False  # 动作执行状态 
@@ -344,6 +345,12 @@ class CustomActionServer(Node):
                         self.action_status_pub(
                             "navigation_2", point_name=point_name
                         )  # 执行导航成功
+                        
+                        # ====== 新增：到达成功的语音播报 ======
+                        msg = String(data=f"报告，我已经成功到达{point_name}啦！")
+                        self.text_pub.publish(msg)
+                        # ==================================
+                        
                     else:
                         self.get_logger().info(
                             f"Navigation failed with status: {result.status}"
@@ -351,6 +358,11 @@ class CustomActionServer(Node):
                         self.action_status_pub(
                             "navigation_4", point_name=point_name
                         )  # 执行导航失败
+                        
+                        # ====== 新增：导航失败的语音播报 ======
+                        msg = String(data=f"抱歉，前往{point_name}的路上遇到了困难，导航失败了。")
+                        self.text_pub.publish(msg)
+                        # ==================================
 
             get_result_future.add_done_callback(result_callback)
 
@@ -463,10 +475,7 @@ class CustomActionServer(Node):
 
 
     def cancel(self):
-        cmd1 = "ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "
-        cmd2 = '''"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"'''
-        cmd = cmd1 +cmd2
-        os.system(cmd)
+        self.stop()
 
     def slam_start(self):
         self.navigation_stop()
@@ -494,7 +503,8 @@ class CustomActionServer(Node):
     def navigation_start(self):
         self.slam_stop()
         self.navigation_future = Future()
-        process_fuc = subprocess.Popen(['ros2', 'launch', 'wheeltec_nav2', 'wheeltec_nav2_model.launch.py'])
+        # 修改这里的 package 为 largemodel，文件名为 largemodel_nav.launch.py
+        process_fuc = subprocess.Popen(['ros2', 'launch', 'largemodel', 'largemodel_nav.launch.py'])
         # time.sleep(1.0)#睡眠2秒等待线程稳定
         while not self.navigation_future.done():
             time.sleep(0.1)
@@ -506,25 +516,47 @@ class CustomActionServer(Node):
         if not self.navigation_future.done():
             self.navigation_future.set_result(True)
 
-    def KCF_follow(self,x1=0,y1=0,x2=0,y2=0):
-        if x1==y1==x2==y2==0:
-            self.seewhat('KCF_follow(x1,y1,x2,y2)')
-        self.get_logger().info(f'kcf_follow: x1:{x1};y1:{y1};x2:{x2};y2:{y2}')
-        scale = 640 / 1000 if self.multimodel.strip("'\"") == 'qwen3-vl-plus' else 1
-        x1, y1, x2, y2 = (
-                        int(round(int(v) * (scale if i % 2 == 0 else scale * 480 / 640)))
-                        for i, v in enumerate((x1, y1, x2, y2))
-                    )
-        self.KCF_follow_future = Future() #复位Future对象 
-        process_fuc = subprocess.Popen(['ros2', 'run', 'wheeltec_robot_kcf', 'run_tracker_model','--ros-args','-p',f'x1:={x1}','-p',f'y1:={y1}','-p',f'x2:={x2}','-p',f'y2:={y2}'])
-        # time.sleep(1.0)#睡眠2秒等待线程稳定
+    def KCF_follow(self, x1, y1, x2, y2):
+        self.KCF_follow_future = Future()
+        
+        # ====== 核心修复：坐标系比例尺映射 (1000x1000 -> 848x480) ======
+        # 将大模型的归一化比例坐标，转换为真实相机的像素坐标
+        real_x1 = int(float(x1) / 1000.0 * 848)
+        real_y1 = int(float(y1) / 1000.0 * 480)
+        real_x2 = int(float(x2) / 1000.0 * 848)
+        real_y2 = int(float(y2) / 1000.0 * 480)
+        
+        # 增加边界安全保护，防止坐标溢出导致节点崩溃
+        real_x1 = max(0, min(real_x1, 847))
+        real_y1 = max(0, min(real_y1, 479))
+        real_x2 = max(0, min(real_x2, 847))
+        real_y2 = max(0, min(real_y2, 479))
+        # ==========================================================
+
+        self.get_logger().info(f'大模型原始坐标: x1:{x1};y1:{y1};x2:{x2};y2:{y2}')
+        self.get_logger().info(f'相机真实坐标: x1:{real_x1};y1:{real_y1};x2:{real_x2};y2:{real_y2}')
+        self.get_logger().info("wheeltec_robot kcf_tracker start")
+
+        # 强行注入离屏环境参数，防 GTK 崩溃
+        my_env = os.environ.copy()
+        my_env["DISPLAY"] = ":0"  
+        my_env["QT_QPA_PLATFORM"] = "offscreen" 
+        my_env["XDG_RUNTIME_DIR"] = "/tmp/runtime-nvidia" 
+
+        # 使用映射后的真实坐标 (real_x1...) 启动节点
+        process_fuc = subprocess.Popen(
+            ['ros2', 'run', 'wheeltec_robot_kcf', 'run_tracker_node',
+             '--ros-args','-p',f'x1:={real_x1}','-p',f'y1:={real_y1}','-p',f'x2:={real_x2}','-p',f'y2:={real_y2}'],
+            env=my_env
+        )
+
         while not self.KCF_follow_future.done():
             if self.interrupt_flag:
                 break
             time.sleep(0.1)
+
         self.kill_process_tree(process_fuc.pid)
         self.cancel()
-
     def visual_follower(self,color):
         try:
             self.visual_follower_future = Future() 
@@ -555,17 +587,23 @@ class CustomActionServer(Node):
         
     def laser_follower(self):
         self.laser_follower_future = Future()
-        process_fuc = subprocess.Popen(['ros2', 'run', 'simple_follower_ros2', 'laserfollower'])
-        # time.sleep(1.0)#睡眠2秒等待线程稳定
+        
+        # 【修改点 1：屏蔽真实雷达跟随节点的启动】
+        # process_fuc = subprocess.Popen(['ros2', 'run', 'simple_follower_ros2', 'laserfollower'])
+        
+        # 打印一行警告日志，方便你在终端里知道这个功能被调用但已被拦截
+        self.get_logger().warning("接收到雷达跟随指令，但实际物理功能已被屏蔽，机器人原地待命。")
 
+        # 保持原有的阻塞逻辑，让程序假装在执行，直到被语音打断或任务结束
         while not self.laser_follower_future.done():
             if self.interrupt_flag:
                 break
             time.sleep(0.1)
 
-        self.kill_process_tree(process_fuc.pid)
+        # 【修改点 2：既然没有启动子进程，就不需要杀进程了，直接注释掉】
+        # self.kill_process_tree(process_fuc.pid)
+        
         self.cancel()
-
         
     def line_follower(self,color):
         try:

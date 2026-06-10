@@ -1,6 +1,6 @@
 tts_node:
     ros__parameters:
-        appid: b22421bd
+        appid: e002001d
           # /*
           # * rdn:           合成音频数字发音方式
           # * volume:        合成音频的音量
@@ -15,7 +15,7 @@ tts_node:
                     #1 完全数值,
                     #2 完全字符串,
                     #3 字符串优先
-        volume: 50  #合成音频的音量,调整范围：[0,100],值越大音量越高
+        volume: 90  #合成音频的音量,调整范围：[0,100],值越大音量越高
         pitch : 50
         speed: 50   #合成音频对应的语速,调整范围：[0,100],值越大速度越快
         voice_name : xiaoyan

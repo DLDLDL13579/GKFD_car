@@ -27,7 +27,7 @@ def generate_launch_description():
             # -- 针对 Jetson 架构的核心规避参数 (保持不变) --
             'enable_gyro': 'false',   # 强制禁用陀螺仪
             'enable_accel': 'false',  # 强制禁用加速度计
-            'enable_sync': 'true'    # 关闭硬件级同步，防止等待 IMU 数据导致死锁
+            'enable_sync': 'true',    # 关闭硬件级同步，防止等待 IMU 数据导致死锁
         }.items()
     )
 
