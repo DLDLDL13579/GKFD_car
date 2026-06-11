@@ -486,26 +486,78 @@ class CustomActionServer(Node):
 
     def slam_start(self):
         self.navigation_stop()
-        subprocess.run(['pkill', '-f', 'turn_on_wheeltec_robot'], check=False)
-        time.sleep(0.5)
-        subprocess.Popen(['ros2', 'launch', 'turn_on_wheeltec_robot', 'turn_on_wheeltec_robot.launch.py'])
-        time.sleep(1.0)
+        
+        # ⚠️ 注意这里：不再杀任何底盘、相机、雷达的进程！让它们继续在后台安心跑。
+        
         self.slam_future = Future()
-        process_fuc = subprocess.Popen(['ros2', 'run', 'slam_gmapping', 'slam_gmapping','--ros-args','-p','use_sim_time:=false'])
-        # time.sleep(1.0)#睡眠2秒等待线程稳定
+        
+        # 优雅地调起纯净版建图算法
+        process_fuc = subprocess.Popen(['ros2', 'launch', 'largemodel', 'largemodel_slam.launch.py'])
+        
+        self.loop_closure_count = 0
+        self.loop_closure_announced = False
+        self._start_lc_monitor()
+        
         while not self.slam_future.done():
             time.sleep(0.1)
 
         self.kill_process_tree(process_fuc.pid)
+        self._stop_lc_monitor()
         self.cancel()
 
     def slam_stop(self):
         if not self.slam_future.done():
-            subprocess.Popen(['ros2', 'launch', 'wheeltec_nav2', 'save_map.launch.py'])
-            time.sleep(5)
+            # 使用 nav2_map_server 保存 2D 占用栅格地图
+            subprocess.run(['ros2', 'run', 'nav2_map_server', 'map_saver_cli',
+                           '-t', '/map', 
+                           '-f', '/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/my_map',
+                           '--ros-args', 
+                           '-p', 'save_map_timeout:=10000.0'],
+                          check=False)
+            time.sleep(3)
+            # 复制 rtabmap.db（包含 3D 地图数据）
+            src_db = os.path.expanduser('~/.ros/rtabmap.db')
+            dst_db = '/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/my_room.db'
+            if os.path.exists(src_db):
+                shutil.copy2(src_db, dst_db)
+                self.get_logger().info(f"rtabmap.db has been copied to {dst_db}")
+            else:
+                self.get_logger().warn(f"rtabmap.db not found at {src_db}")
             self.slam_future.set_result(True)
-            msg = String(data=f"建图结束,地图保存完成")
+            msg = String(data="建图结束，地图保存完成")
             self.text_pub.publish(msg)
+            self._stop_lc_monitor()
+
+    def _start_lc_monitor(self):
+        try:
+            from rtabmap_msgs.msg import Statistics
+            self._lc_sub = self.create_subscription(
+                Statistics,
+                '/rtabmap/statistics',
+                self._lc_callback,
+                10
+            )
+            self.get_logger().info("Loop closure monitoring started")
+        except ImportError:
+            self.get_logger().warn("rtabmap_msgs not available, loop closure monitoring disabled")
+            self._lc_sub = None
+
+    def _stop_lc_monitor(self):
+        if hasattr(self, '_lc_sub') and self._lc_sub is not None:
+            self.destroy_subscription(self._lc_sub)
+            self._lc_sub = None
+
+    def _lc_callback(self, msg):
+        lc_id = getattr(msg, 'loop_closure_id', None)
+        if lc_id is None:
+            lc_id = getattr(msg, 'loopClosureId', -1)
+        if lc_id > 0:
+            self.loop_closure_count += 1
+            self.get_logger().info(f"Loop closure detected! Count: {self.loop_closure_count}")
+            if self.loop_closure_count >= 5 and not self.loop_closure_announced:
+                self.loop_closure_announced = True
+                text = String(data="建图已达到5个回环点，如果要结束保存时可以叫我，我马上为你执行")
+                self.text_pub.publish(text)
             
     def navigation_start(self):
         self.slam_stop()
