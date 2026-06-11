@@ -2,7 +2,7 @@
 
 std::string gSyncSid;
 std::string gVoiceCloneResId;
-std::string awake_word = "请问有什么指示。 ";
+std::string awake_word = "我在！ ";
 std::string thinking = "稍等，正在思索中。 ";
 int gPcmPlayerIndex = -1;
 bool record_status = false;

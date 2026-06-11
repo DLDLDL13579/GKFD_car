@@ -153,6 +153,13 @@ class CustomActionServer(Node):
             Image, self.image_topic, self.image_callback, 2
         )
         self._check_timer = self.create_timer(5.0, self._check_sensor_timer)
+        # 【新增】：创建 KCF 速度中间话题订阅者，用于拦截并加入底盘避障安全逻辑
+        self.kcf_cmd_sub = self.create_subscription(
+            Twist,
+            "/kcf_cmd_vel",
+            self.kcf_cmd_callback,
+            10
+        )
         
         
     
@@ -517,22 +524,38 @@ class CustomActionServer(Node):
             self.navigation_future.set_result(True)
 
     def KCF_follow(self, x1, y1, x2, y2):
+        # ============ 新增的 4 行：将字符串强制转为浮点数 ============
+        x1 = float(x1)
+        y1 = float(y1)
+        x2 = float(x2)
+        y2 = float(y2)
+        # =======================================================
+        
         self.KCF_follow_future = Future()
         
-        # ====== 核心修复：坐标系比例尺映射 (1000x1000 -> 848x480) ======
-        # 将大模型的归一化比例坐标，转换为真实相机的像素坐标
-        real_x1 = int(float(x1) / 1000.0 * 848)
-        real_y1 = int(float(y1) / 1000.0 * 480)
-        real_x2 = int(float(x2) / 1000.0 * 848)
-        real_y2 = int(float(y2) / 1000.0 * 480)
+        # 1. 基础映射计算 (基于你确认的 848x480)
+        real_x1 = int((x1 / 1000.0) * 848)
+        real_y1 = int((y1 / 1000.0) * 480)
+        real_x2 = int((x2 / 1000.0) * 848)
+        real_y2 = int((y2 / 1000.0) * 480)
+        
+        # 2. 为大模型的框“瘦身” (向中心收缩约 20%)，剔除背景噪点
+        box_width = real_x2 - real_x1
+        box_height = real_y2 - real_y1
+        margin_x = int(box_width * 0.20)
+        margin_y = int(box_height * 0.20)
+        
+        real_x1 += margin_x
+        real_y1 += margin_y
+        real_x2 -= margin_x
+        real_y2 -= margin_y
         
         # 增加边界安全保护，防止坐标溢出导致节点崩溃
         real_x1 = max(0, min(real_x1, 847))
         real_y1 = max(0, min(real_y1, 479))
         real_x2 = max(0, min(real_x2, 847))
         real_y2 = max(0, min(real_y2, 479))
-        # ==========================================================
-
+        
         self.get_logger().info(f'大模型原始坐标: x1:{x1};y1:{y1};x2:{x2};y2:{y2}')
         self.get_logger().info(f'相机真实坐标: x1:{real_x1};y1:{real_y1};x2:{real_x2};y2:{real_y2}')
         self.get_logger().info("wheeltec_robot kcf_tracker start")
@@ -800,7 +823,33 @@ class CustomActionServer(Node):
         # y = abs(self.obstacle_dist) * math.sin(self.obstacle_angle)
         # print(f'angle:{angle}, dist:{self.obstacle_dist}', flush=True)
         # print(f'angle:{angle},obstacle_angle:{self.obstacle_angle},obstacle_dist,x:{x}, y:{y}', flush=True)
-    
+    def kcf_cmd_callback(self, msg):
+        """
+        【新增核心避障逻辑】KCF跟随速度指令的回调函数。
+        在这里利用小车现有的雷达数据进行前瞻性安全过滤，实现高灵敏度的自动避障刹车。
+        """
+        safe_msg = Twist()
+        
+        # 调用脚本中自带的智能前瞻避障算法（结合了当前车速、车宽和雷达距离）
+        if self.obstacle_in_path(msg, self.obstacle_dist, self.obstacle_angle):
+            # 发现碰撞风险，强制清零速度，底盘原地紧急刹车保护硬件
+            safe_msg.linear.x = 0.0
+            safe_msg.linear.y = 0.0
+            safe_msg.angular.z = 0.0
+            
+            # 限制语音/文字发布的频率（每2.5秒最多报一次），防止高频回调导致语音刷屏卡死
+            if not hasattr(self, '_last_kcf_warn_time') or (time.time() - self._last_kcf_warn_time > 20.5):
+                warn_text = String(data="安全警告：前方检测到障碍物，视觉跟随已自动刹车避障！")
+                self.text_pub.publish(warn_text)
+                self._last_kcf_warn_time = time.time()
+        else:
+            # 路径绝对安全，原封不动转发 C++ 计算出来的精准跟随速度（包含 PID 算出的线速度和角速度）
+            safe_msg.linear.x = msg.linear.x
+            safe_msg.linear.y = msg.linear.y
+            safe_msg.angular.z = msg.angular.z
+            
+        # 发布给真正的底盘驱动话题（即 self.Speed_topic，也就是 /cmd_vel）
+        self.publisher.publish(safe_msg)
 
 def main(args=None):
     rclpy.init(args=args)
