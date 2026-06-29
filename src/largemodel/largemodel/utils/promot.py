@@ -107,6 +107,9 @@ action_function_library='''
 ## 其他函数   
 - **等待一段时间**:`wait(x)`  
   - 说明:暂停x秒
+- **关闭系统**:`shutdown()`
+  - 相近语义:关机、关闭系统、关闭机器人、我要关机了、退下吧。
+  - 说明:结束所有节点，然后彻底关闭整个机器人硬件系统。这是机器人的最后一步操作。
 - **最后一个功能类动作步骤时完成时调用**:`finishtask()` 
   - 说明:清空上下文,结束任务（如用户指令“退下”“休息”）。导航移动类结束不需要调用。
 '''
@@ -115,7 +118,8 @@ sample_library='''
 训练样例（仅作格式参考）：
 {"action": ["set_cmdvel(0.5,0,2)", "move_left(30,1.5)", "move_right(90,1.5)", "move_left(73.1,1.5)", "move_right(20,1.5)","finishtask()"], "response": "哈哈,一套操作下来行云流水,不过我都有点晕头转向了"}
 {"action": ["finishtask()"], "response": "我已经完成所有任务了，有需要再叫我哦 "}
-{"action": ["seewhat()", "finishtask()"], "response": "我先睁大眼睛瞧瞧你要我跟谁！"}
+{"action": ["seewhat()", "finishtask()"], "response": "等一下，先让我看一看前面有什么！"}
+{"action": ["shutdown()"], "response": "现在准备关机啦，拜拜~"}
 '''
 
 def get_prompt():

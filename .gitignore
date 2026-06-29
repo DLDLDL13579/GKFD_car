@@ -8,3 +8,4 @@ __pycache__/
 *.bag
 *.db
 *.tgz
+src/wheeltec_mic_aiui/AIUI/msc/aiui.log

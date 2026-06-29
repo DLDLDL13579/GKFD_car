@@ -119,7 +119,8 @@ class CustomActionServer(Node):
             "failure_execute_action_function_not_exists": "机器人反馈:动作函数不存在，无法执行",
             "finish": "finish",
             "finish_task": "f机器人反馈：执行跟随任务完成",
-            "multiple_done": "机器人反馈：执行{actions}完成"
+            "multiple_done": "机器人反馈：执行{actions}完成",
+            "shutdown_done": "机器人反馈：关机指令执行完毕"
         }
         self._sensor_map = {
             '相机': '/camera/color/image_raw',
@@ -483,7 +484,28 @@ class CustomActionServer(Node):
 
     def cancel(self):
         self.stop()
-
+    def shutdown(self):
+        # 幂等保护：防止语音多次识别导致重复触发
+        if hasattr(self, '_shutting_down') and self._shutting_down:
+            return
+        self._shutting_down = True
+        
+        self.get_logger().info("【系统指令】收到关机指令，准备断电...")
+        
+        
+        # 2. 紧急停止底盘运动和跟随进程
+        self.stop()
+        self.stop_follow()
+        self.interrupt_flag = True
+        
+        # 3. 留出3秒时间，让音箱把那句“拜拜”播报完
+        time.sleep(3.0)
+        
+        os.system("echo 'nvidia' | sudo -S /sbin/shutdown -h now")
+        os.system("echo 'nvidia' | sudo -S /sbin/poweroff")
+        
+        if not self.interrupt_flag:
+            self.action_status_pub("shutdown_done")
     def slam_start(self):
         self.navigation_stop()
         
@@ -558,13 +580,50 @@ class CustomActionServer(Node):
                 self.loop_closure_announced = True
                 text = String(data="建图已达到5个回环点，如果要结束保存时可以叫我，我马上为你执行")
                 self.text_pub.publish(text)
-            
+    def is_localized(self):
+        """检查 TF 树中 map 到 base_footprint 是否存在，判断是否已定位"""
+        try:
+            # 尝试查找坐标转换
+            self.tf_buffer.lookup_transform("map", "base_footprint", rclpy.time.Time())
+            return True
+        except Exception:
+            return False
+
+    def safe_spin(self, duration=10.0, angular_speed=0.3):
+        """避障自旋函数"""
+        start_time = time.time()
+        twist = Twist()
+        twist.angular.z = angular_speed
+        
+        while (time.time() - start_time) < duration:
+            # 检查是否有障碍物
+            if self.obstacle_in_path(twist, self.obstacle_dist, self.obstacle_angle):
+                self.stop()
+                return False
+            self.publisher.publish(twist)
+            time.sleep(0.1)
+        self.stop()
+        return True        
     def navigation_start(self):
         self.slam_stop()
         self.navigation_future = Future()
-        # 修改这里的 package 为 largemodel，文件名为 largemodel_nav.launch.py
+        
+        # 1. 启动导航
         process_fuc = subprocess.Popen(['ros2', 'launch', 'largemodel', 'largemodel_nav.launch.py'])
-        # time.sleep(1.0)#睡眠2秒等待线程稳定
+        
+        # 2. 核心逻辑：给 15 秒加载时间
+        time.sleep(15.0) 
+        
+        # 3. 智检：如果没定位成功，就进行安全自旋
+        if not self.is_localized():
+            self.get_logger().info("检测到未定位，执行安全旋转重定位...")
+            self.safe_spin(duration=10.0, angular_speed=0.4)
+        
+        # 4. 再次检查，如果还是没定位，发语音报错
+        if not self.is_localized():
+             msg = String(data="未能找到位置，请将我移至地图已知区域")
+             self.text_pub.publish(msg)
+        
         while not self.navigation_future.done():
             time.sleep(0.1)
 

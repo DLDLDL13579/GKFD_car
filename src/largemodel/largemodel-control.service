@@ -1,0 +1,38 @@
+[Unit]
+Description=Wheeltec LargeModel Control - 语音交互机器人主服务
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=nvidia
+Group=nvidia
+WorkingDirectory=/home/nvidia/wheeltec_ros2
+
+# ====== 核心环境变量 ======
+Environment="HOME=/home/nvidia"
+Environment="USER=nvidia"
+Environment="ROS_DOMAIN_ID=1"
+Environment="ROS_LOCALHOST_ONLY=0"
+# 图形与渲染防崩溃
+Environment="DISPLAY=:0"
+Environment="QT_QPA_PLATFORM=offscreen"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+# 音频/声卡权限（极度重要，没有它开机无法语音）
+Environment="PULSE_RUNTIME_PATH=/run/user/1000/pulse"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+
+# 启动前等待系统声卡加载
+ExecStartPre=/bin/sleep 5
+
+
+# 执行 ROS2 Launch
+ExecStart=/bin/bash -c "source /opt/ros/humble/setup.bash && source /home/nvidia/wheeltec_ros2/install/setup.bash && ros2 launch largemodel largemodel_control.launch.py"
+
+# 重启策略与杀进程策略
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
