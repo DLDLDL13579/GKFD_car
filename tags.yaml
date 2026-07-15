@@ -1,0 +1,9 @@
+/**:
+  ros__parameters:
+    family: "36h11"
+    size: 0.075
+    # 强行指定：只要看到 ID 0，就必须生成 tag36h11_0 坐标系！
+    tag:
+      ids: [0]
+      frames: ["tag36h11_0"]
+      sizes: [0.075]

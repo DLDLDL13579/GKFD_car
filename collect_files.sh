@@ -10,15 +10,21 @@ OUTPUT_FILE="combined_files.txt"
 FILES=(
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_camera.launch.py"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_lidar.launch.py"
-    "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/launch/wheeltec_slam_rtab.launch.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/launch/largemodel_control.launch.py"
     "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/params/rtabmap_nav_params.yaml"
-    "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rrt2/launch/rrt_exploration/wheeltec_rrt_slam.launch.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/launch/largemodel_nav.launch.py"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/turn_on_wheeltec_robot.launch.py"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/base_serial.launch.py"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/launch/wheeltec_ekf.launch.py"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/config/imu.yaml"
     "/home/nvidia/wheeltec_ros2/src/turn_on_wheeltec_robot/config/ekf.yaml"
-    "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/launch/wheeltec_nav2_rtab.launch.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/launch/largemodel_slam.launch.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/largemodel/action_service.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/largemodel/model_service.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/largemodel/utils/promot.py"
+    "/home/nvidia/wheeltec_ros2/src/largemodel/config/model_config.yaml"
+
+
 )
 
 # 遍历每个文件

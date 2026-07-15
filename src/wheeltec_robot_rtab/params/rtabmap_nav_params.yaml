@@ -61,8 +61,8 @@ amcl_rclcpp_node:
 bt_navigator:
   ros__parameters:
     use_sim_time: False
-    transform_tolerance: 0.1 #变换容差
-    goal_reached_tol: 0.25 #接受姿势作为目标的容忍度(m)
+    transform_tolerance: 0.15 #变换容差
+    goal_reached_tol: 0.15 #接受姿势作为目标的容忍度(m)
     global_frame: map
     robot_base_frame: base_footprint
     odom_topic: /odom_combined
@@ -110,8 +110,8 @@ controller_server:
     general_goal_checker: #目标检查器
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25  #xy 目标容差
-      yaw_goal_tolerance: 0.25 #yaw目标容差
+      xy_goal_tolerance: 0.15 #xy 目标容差
+      yaw_goal_tolerance: 0.15 #yaw目标容差
     # DWB parameters
     FollowPath: 
       plugin: "nav2_rotation_shim_controller::RotationShimController" #旋转控制器
@@ -178,7 +178,7 @@ controller_server:
         collision_margin_distance: 0.2 #碰撞边缘距离，应该设置在0.05-0.2之间，请确保将此参数设置为预计机器人需要穿越的最窄空间
         near_goal_distance: 0.4 #靠近目标的距离（米）停止应用优先障碍物项，以允许机器人平稳地收敛到靠近障碍物的目标姿势，0.5 --> 0.6 -->0.3(Tues) 
         cost_scaling_factor: 5.0
-        inflation_radius: 0.20  #膨胀半径，仅限Humble
+        inflation_radius: 0.10  #膨胀半径，仅限Humble
 
       PreferForwardCritic: #激励机器人前进，而不是后退
         enabled: true
