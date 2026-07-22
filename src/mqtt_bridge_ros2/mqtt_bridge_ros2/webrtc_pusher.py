@@ -53,8 +53,11 @@ class CameraSubscriber(Node):
         try:
             cv_img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             camera_holder.update(cv_img)
+            self._frame_count = getattr(self, "_frame_count", 0) + 1
+            if self._frame_count % 30 == 1:
+                print(f"[webrtc_cam] recv frame #{self._frame_count} shape={cv_img.shape}", flush=True)
         except Exception as e:
-            self.get_logger().warn(f"Image decode error: {e}")
+            print(f"[webrtc_cam] decode error: {e}", flush=True)
 
 # ════════════════════════════════════════════
 # WebRTC video track
@@ -68,15 +71,33 @@ class RobotCameraTrack(MediaStreamTrack):
 
     async def recv(self):
         import av
+        import traceback
         pts, time_base = await self.next_timestamp()
-        frame = camera_holder.get() or np.zeros((480, 640, 3), dtype=np.uint8)
-        video_frame = VideoFrame.from_ndarray(frame, format="bgr24")
-        # 浏览器只接受 YUV420p 编码的 RTP 负载；aiortc 不会自动从 BGR 转 YUV
-        video_frame = video_frame.reformat(format="yuv420p")
-        video_frame.pts = pts
-        video_frame.time_base = time_base
-        self.counter += 1
-        return video_frame
+        bgr = camera_holder.get()
+        if bgr is None:
+            bgr = np.zeros((480, 640, 3), dtype=np.uint8)
+            is_dummy = True
+        else:
+            is_dummy = False
+        try:
+            # 先转 RGB24（av 处理 RGB 比 BGR 稳定），再 reformat 到 YUV420p
+            rgb = bgr[..., ::-1].copy()  # BGR -> RGB
+            video_frame = VideoFrame.from_ndarray(rgb, format="rgb24")
+            video_frame = video_frame.reformat(format="yuv420p")
+            video_frame.pts = pts
+            video_frame.time_base = time_base
+            self.counter += 1
+            if self.counter % 30 == 1:
+                print(f"[webrtc_track] frame #{self.counter} shape={rgb.shape} dummy={is_dummy}", flush=True)
+            return video_frame
+        except Exception as e:
+            print(f"[webrtc_track] frame error: {e}\n{traceback.format_exc()}", flush=True)
+            # 推一个最简 yuv420p 黑帧保活
+            black = np.zeros((480, 640, 3), dtype=np.uint8)
+            vf = VideoFrame.from_ndarray(black[..., ::-1], format="rgb24").reformat(format="yuv420p")
+            vf.pts = pts
+            vf.time_base = time_base
+            return vf
 
 from aiortc.mediastreams import VideoFrame
 
@@ -97,21 +118,39 @@ bg_thread.start()
 
 
 async def _create_answer(offer_sdp: str) -> dict:
-    """WebRTC answer creation — runs on the shared bg loop."""
-    pc = RTCPeerConnection()
+    """WebRTC answer creation — runs on the shared bg loop.
+    配置 STUN 让跨网段也能穿透；不自动 close PC，靠 /health 周期清理僵尸。"""
+    # 用 Google 公开 STUN + 自己的 host candidate（局域网）
+    pc = RTCPeerConnection(iceServers=[
+        {"urls": "stun:stun.l.google.com:19302"},
+        {"urls": "stun:stun1.l.google.com:19302"},
+    ])
     _pcs.add(pc)
+    track = RobotCameraTrack()
+    pc.addTrack(track)
 
-    pc.addTrack(RobotCameraTrack())
+    @pc.on("connectionstatechange")
+    async def on_conn_state():
+        print(f"[pc] connectionState={pc.connectionState}", flush=True)
 
     @pc.on("iceconnectionstatechange")
     async def on_ice_state():
-        if pc.iceConnectionState in ("failed", "closed", "disconnected"):
-            _pcs.discard(pc)
-            await pc.close()
+        print(f"[pc] iceConnectionState={pc.iceConnectionState}", flush=True)
 
+    @pc.on("icegatheringstatechange")
+    async def on_ice_gather():
+        print(f"[pc] iceGatheringState={pc.iceGatheringState}", flush=True)
+
+    @pc.on("track")
+    async def on_track(track):
+        print(f"[pc] track kind={track.kind} id={track.id}", flush=True)
+
+    print(f"[pc] created, setRemoteDescription...", flush=True)
     await pc.setRemoteDescription(RTCSessionDescription(sdp=offer_sdp, type="offer"))
+    print(f"[pc] createAnswer...", flush=True)
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+    print(f"[pc] answer ready, type={pc.localDescription.type}", flush=True)
     return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
 
 
