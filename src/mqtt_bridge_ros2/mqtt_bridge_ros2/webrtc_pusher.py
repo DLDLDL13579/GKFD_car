@@ -15,8 +15,9 @@ import signal
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from aiortc import RTCPeerConnection, MediaStreamTrack, RTCSessionDescription
+from aiortc import RTCPeerConnection, RTCConfiguration, MediaStreamTrack, RTCSessionDescription
 from aiortc.contrib.media import MediaRelay
+from aiortc.mediastreams import VideoFrame, VideoStreamTrack
 
 # ════════════════════════════════════════════
 # Camera frame holder (thread-safe)
@@ -62,8 +63,7 @@ class CameraSubscriber(Node):
 # ════════════════════════════════════════════
 # WebRTC video track
 # ════════════════════════════════════════════
-class RobotCameraTrack(MediaStreamTrack):
-    kind = "video"
+class RobotCameraTrack(VideoStreamTrack):
 
     def __init__(self):
         super().__init__()
@@ -75,7 +75,7 @@ class RobotCameraTrack(MediaStreamTrack):
         pts, time_base = await self.next_timestamp()
         bgr = camera_holder.get()
         if bgr is None:
-            bgr = np.zeros((480, 640, 3), dtype=np.uint8)
+            bgr = np.zeros((480, 848, 3), dtype=np.uint8)
             is_dummy = True
         else:
             is_dummy = False
@@ -93,13 +93,12 @@ class RobotCameraTrack(MediaStreamTrack):
         except Exception as e:
             print(f"[webrtc_track] frame error: {e}\n{traceback.format_exc()}", flush=True)
             # 推一个最简 yuv420p 黑帧保活
-            black = np.zeros((480, 640, 3), dtype=np.uint8)
+            black = np.zeros((480, 848, 3), dtype=np.uint8)
             vf = VideoFrame.from_ndarray(black[..., ::-1], format="rgb24").reformat(format="yuv420p")
             vf.pts = pts
             vf.time_base = time_base
             return vf
 
-from aiortc.mediastreams import VideoFrame
 
 # ════════════════════════════════════════════
 # Shared asyncio loop in background thread
@@ -121,10 +120,7 @@ async def _create_answer(offer_sdp: str) -> dict:
     """WebRTC answer creation — runs on the shared bg loop.
     配置 STUN 让跨网段也能穿透；不自动 close PC，靠 /health 周期清理僵尸。"""
     # 用 Google 公开 STUN + 自己的 host candidate（局域网）
-    pc = RTCPeerConnection(iceServers=[
-        {"urls": "stun:stun.l.google.com:19302"},
-        {"urls": "stun:stun1.l.google.com:19302"},
-    ])
+    pc = RTCPeerConnection(RTCConfiguration())
     _pcs.add(pc)
     track = RobotCameraTrack()
     pc.addTrack(track)

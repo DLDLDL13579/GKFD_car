@@ -12,7 +12,11 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Float32, Bool, Int8
 from geometry_msgs.msg import Twist, PoseStamped, PoseWithCovarianceStamped
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, OccupancyGrid
+from rclpy.qos import QoSProfile, DurabilityPolicy
+import numpy as np
+import cv2
+import base64
 import paho.mqtt.client as mqtt
 import json
 import subprocess
@@ -180,6 +184,9 @@ class SystemManager(Node):
 
         # ═══ ROS2 订阅者 ═══
         self._odom_sub = self.create_subscription(Odometry, "/odom", self._odom_cb, 10)
+        # ROS 2 地图专用 QoS（TRANSIENT_LOCAL 让后入网节点也能拿到旧地图）
+        map_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self._map_sub = self.create_subscription(OccupancyGrid, "/map", self._map_cb, map_qos)
         self._volt_sub = self.create_subscription(
             Float32, "/PowerVoltage", self._voltage_cb, 10
         )
@@ -459,6 +466,28 @@ class SystemManager(Node):
     # ────────────────────────────────────────
     #  ROS2 订阅回调
     # ────────────────────────────────────────
+    def _map_cb(self, msg: OccupancyGrid):
+        """把 /map 的 OccupancyGrid 矩阵压缩为 PNG-Base64,通过 MQTT 发给前端。"""
+        try:
+            w = msg.info.width
+            h = msg.info.height
+            data = np.array(msg.data, dtype=np.int8).reshape((h, w))
+            img = np.zeros((h, w), dtype=np.uint8)
+            img[data == -1] = 128  # 未知
+            img[data == 0]  = 255  # 安全
+            img[data >= 1]  = 0    # 障碍
+            img = cv2.flip(img, 0) # Y 轴翻转对齐 ROS/前端
+            _, buf = cv2.imencode(".png", img)
+            b64_str = base64.b64encode(buf).decode("utf-8")
+            if self._mqtt_connected:
+                self._mqtt_pub("/map_data", {
+                    "image": b64_str,
+                    "resolution": msg.info.resolution,
+                    "width": w, "height": h,
+                })
+        except Exception as e:
+            self.get_logger().error(f"处理地图数据时出错: {e}")
+
     def _odom_cb(self, msg: Odometry):
         self._odom_x = msg.pose.pose.position.x
         self._odom_y = msg.pose.pose.position.y

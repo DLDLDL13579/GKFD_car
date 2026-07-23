@@ -16,5 +16,5 @@ def generate_launch_description():
              parameters=[{"image_topic":"/camera/color/image_raw","webrtc_port":8082}]),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(share,"launch","web_console.launch.py"))),
-        ExecuteProcess(cmd=["python3","-m","http.server","8081","--directory","/tmp/www"],output="screen"),
+        #         ExecuteProcess(cmd=["python3","-m","http.server","8081","--directory","/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab"],output="screen"),
     ])

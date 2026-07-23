@@ -1916,3 +1916,952 @@ retCode=0
 [2026/07/22 19:00:21 824] [P0x00001069] [T0x00001d53] D/WSConnection(line 385)         :destroyWebSocket.
 [2026/07/22 19:00:21 824] [P0x00001069] [T0x00001d53] W/DataSender(line 1425)          :up disconnected.
 [2026/07/22 19:00:21 824] [P0x00001069] [T0x00001d53] D/WSConnection(line 598)         :receive stopped, tid=7507, sessionNo=1.
+================================================================
+Time 2026/07/22 19:16:56 746
+================================================================
+[2026/07/22 19:16:56 844] [P0x00001884] [T0x00001884] I/AIUISession(line 65)           :session begin, aiui_ver=1, sessionNo=1.
+[2026/07/22 19:16:56 872] [P0x00001884] [T0x00001884] D/NameServer(line 263)           :resolveHost begin, ignoreCache=0.
+[2026/07/22 19:16:56 001] [P0x00001884] [T0x0000191a] D/NameServer(line 151)           :dns resolve hdns.openspeech.cn as [101.200.180.128], spent 118ms.
+[2026/07/22 19:16:56 002] [P0x00001884] [T0x0000191a] D/NameServer(line 176)           :ipv6_support=1, is_ipv6_prior=0, ip_env=MIXED, use ip 101.200.180.128.
+[2026/07/22 19:16:56 002] [P0x00001884] [T0x0000191a] D/NameServer(line 207)           :getNameServerResult, GET request:
+GET /sip/resolver?srand=0722191663.32 HTTP/1.1
+Connection: Close
+Accept-Encoding: gzip
+Host: hdns.openspeech.cn
+X-Par: ver=1.3&appid=e002001d&operator=&nettype=&cver=6.6.0001.0047&svc=aiui&host=aiui-ipv6.openspeech.cn&sign=5379c6d4760b89f91c764e8c8e34658b
+
+
+[2026/07/22 19:16:57 100] [P0x00001884] [T0x0000191a] D/NameServer(line 221)           :getNameServerResult, spent 98ms, response:
+{"dns":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.27","port":80,"idc":"dx"},{"ip":"42.62.116.26","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}],"default":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.26","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}]}
+
+[2026/07/22 19:16:57 101] [P0x00001884] [T0x0000191a] D/NameServer(line 507)           :dns nameserver resolve aiui-ipv6.openspeech.cn as [42.62.116.27, 42.62.116.26], spent 223ms, ttl=6000.
+[2026/07/22 19:16:57 101] [P0x00001884] [T0x0000191a] D/NameServer(line 533)           :dns nameserver set current address 42.62.116.27:80.
+[2026/07/22 19:16:57 101] [P0x00001884] [T0x0000191a] D/NameServer(line 537)           :dns nameserver update.
+[2026/07/22 19:16:57 101] [P0x00001884] [T0x0000191a] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/22 19:16:57 131] [P0x00001884] [T0x00001884] D/NameServer(line 301)           :dns resolve aiui-ipv6.openspeech.cn as [240e:83:9001:2a::10, 240e:83:9001:2a::3, 124.243.239.171, 42.62.116.26, 124.243.239.172], spent 29ms.
+[2026/07/22 19:16:57 140] [P0x00001884] [T0x00001884] I/DataSender(line 72)            :start sender.
+[2026/07/22 19:16:57 151] [P0x00001884] [T0x00001884] I/DataSender(line 135)           :started success.
+[2026/07/22 19:16:57 151] [P0x00001884] [T0x00001884] I/DataReceiver(line 46)          :start receiver.
+[2026/07/22 19:16:57 151] [P0x00001884] [T0x00001884] I/DataReceiver(line 94)          :started success.
+[2026/07/22 19:16:57 151] [P0x00001884] [T0x00001884] I/AIUISession(line 150)          :session has begun, spent 307ms.
+[2026/07/22 19:16:57 177] [P0x00001884] [T0x00001884] D/ConverterFactory(line 21)      :converter name default
+[2026/07/22 19:16:57 177] [P0x00001884] [T0x00001884] I/Converter(line 53)             :need_channels_ 2
+[2026/07/22 19:16:57 177] [P0x00001884] [T0x00001884] D/SpeechModule(line 88)          :data source sdk
+[2026/07/22 19:16:57 177] [P0x00001884] [T0x00001884] D/SpeechModule(line 122)         :SpeechModule started.
+[2026/07/22 19:16:57 177] [P0x00001884] [T0x00001884] I/AIUIScheduler(line 466)        :AIUIScheduler started
+[2026/07/22 19:16:57 177] [P0x00001884] [T0x00001884] D/AIUIAgent(line 139)            :AIUI version=6.6.0001.0047 params={"cbmparams":{"nlp":{"nlp":{"compress":"raw","encoding":"utf8","format":"json"},"sub_scene":"cbm_v45"}},"global":{"aiui_ver":"1","clean_dialog_history":"auto","scene":"main_box"},"iat":{"sample_rate":"16000"},"interact":{"interact_timeout":"-1","result_timeout":"5000"},"ivw":{"mic_type":"mic1","res_path":"AIUI/assets/vtn/vtn.ini"},"log":{"datalog_path":"","datalog_size":1024,"debug_log":"0","raw_audio_path":"","save_datalog":"0"},"login":{"api_secret":"MWI4MjgwYzdlZTY5YzljMjkzMjY5MGM3","appid":"e002001d","key":"40bf94a0e12e530644b4859323fb9077"},"recorder":{"channel_count":1,"channel_filter":"0,-1","sample_size":2},"speech":{"audio_captor":"system","data_source":"sdk","intent_engine_type":"cloud","interact_mode":"continuous","wakeup_mode":"off"},"tts":{"engine_type":"cloud"},"vad":{"engine_type":"meta"}}
+================================================================
+Time 2026/07/22 19:53:01 723
+================================================================
+[2026/07/22 19:53:01 794] [P0x00001761] [T0x00001761] I/AIUISession(line 65)           :session begin, aiui_ver=1, sessionNo=1.
+[2026/07/22 19:53:01 797] [P0x00001761] [T0x00001761] D/NameServer(line 263)           :resolveHost begin, ignoreCache=0.
+[2026/07/22 19:53:01 861] [P0x00001761] [T0x000017a7] D/NameServer(line 151)           :dns resolve hdns.openspeech.cn as [101.200.180.128], spent 44ms.
+[2026/07/22 19:53:01 861] [P0x00001761] [T0x000017a7] D/NameServer(line 176)           :ipv6_support=1, is_ipv6_prior=0, ip_env=MIXED, use ip 101.200.180.128.
+[2026/07/22 19:53:01 861] [P0x00001761] [T0x000017a7] D/NameServer(line 207)           :getNameServerResult, GET request:
+GET /sip/resolver?srand=0722195367.59 HTTP/1.1
+Connection: Close
+Accept-Encoding: gzip
+Host: hdns.openspeech.cn
+X-Par: ver=1.3&appid=e002001d&operator=&nettype=&cver=6.6.0001.0047&svc=aiui&host=aiui-ipv6.openspeech.cn&sign=dfa943d3fa5642458a1434d9f49e741e
+
+
+[2026/07/22 19:53:02 031] [P0x00001761] [T0x000017a7] D/NameServer(line 221)           :getNameServerResult, spent 169ms, response:
+{"dns":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.27","port":80,"idc":"dx"},{"ip":"42.62.116.26","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}],"default":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.26","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}]}
+
+[2026/07/22 19:53:02 031] [P0x00001761] [T0x000017a7] D/NameServer(line 507)           :dns nameserver resolve aiui-ipv6.openspeech.cn as [42.62.116.27, 42.62.116.26], spent 216ms, ttl=6000.
+[2026/07/22 19:53:02 032] [P0x00001761] [T0x000017a7] D/NameServer(line 533)           :dns nameserver set current address 42.62.116.27:80.
+[2026/07/22 19:53:02 032] [P0x00001761] [T0x000017a7] D/NameServer(line 537)           :dns nameserver update.
+[2026/07/22 19:53:02 032] [P0x00001761] [T0x000017a7] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/22 19:53:02 052] [P0x00001761] [T0x00001761] D/NameServer(line 301)           :dns resolve aiui-ipv6.openspeech.cn as [240e:83:9001:2a::3, 240e:83:9001:2a::10, 124.243.239.172, 42.62.116.26, 124.243.239.171], spent 20ms.
+[2026/07/22 19:53:02 062] [P0x00001761] [T0x00001761] I/DataSender(line 72)            :start sender.
+[2026/07/22 19:53:02 063] [P0x00001761] [T0x00001761] I/DataSender(line 135)           :started success.
+[2026/07/22 19:53:02 063] [P0x00001761] [T0x00001761] I/DataReceiver(line 46)          :start receiver.
+[2026/07/22 19:53:02 063] [P0x00001761] [T0x00001761] I/DataReceiver(line 94)          :started success.
+[2026/07/22 19:53:02 063] [P0x00001761] [T0x00001761] I/AIUISession(line 150)          :session has begun, spent 269ms.
+[2026/07/22 19:53:02 064] [P0x00001761] [T0x000017d0] D/PushConnection(line 222)       :getChidHttps, host=aiui-ipv6.openspeech.cn, hostIP=42.62.116.27.
+[2026/07/22 19:53:02 075] [P0x00001761] [T0x000017d0] D/PushConnection(line 251)       :getChid, POST request:
+POST /v1.1/server/register HTTP/1.1
+Host: aiui-ipv6.openspeech.cn
+Content-Type: text/json
+Connection: Close
+Content-Length: 477
+
+{"appid":"e002001d","cmd":1,"encrypt_key":"","lgi_params":{"app.name":"wheeltec_mic_ai","app.path":"/home/nvidia/wheeltec_ros2/src/wheeltec_mic_aiui/libs/arm64/","auth_id":"","cver":"6.6.0001.0047","dev_lang":"cpp","imei":"","key":"40bf94a0e12e530644b4859323fb9077","mac":"dc:4a:9e:35:8f:31","openudid":"","os_sys":"Linux","prot_type":"pb","pwd":"","sn":"dc:4a:9e:35:8f:31","unique_id":"2e5340e30c8430e24e664bea58f9e7772","usr":"","ver_type":"desktop_pc"},"uid":"d19390359246"}
+
+[2026/07/22 19:53:02 083] [P0x00001761] [T0x00001761] D/ConverterFactory(line 21)      :converter name default
+[2026/07/22 19:53:02 083] [P0x00001761] [T0x00001761] I/Converter(line 53)             :need_channels_ 2
+[2026/07/22 19:53:02 083] [P0x00001761] [T0x00001761] D/SpeechModule(line 88)          :data source sdk
+[2026/07/22 19:53:02 083] [P0x00001761] [T0x00001761] D/SpeechModule(line 122)         :SpeechModule started.
+[2026/07/22 19:53:02 083] [P0x00001761] [T0x00001761] I/AIUIScheduler(line 466)        :AIUIScheduler started
+[2026/07/22 19:53:02 083] [P0x00001761] [T0x00001761] D/AIUIAgent(line 139)            :AIUI version=6.6.0001.0047 params={"cbmparams":{"nlp":{"nlp":{"compress":"raw","encoding":"utf8","format":"json"},"sub_scene":"cbm_v45"}},"global":{"aiui_ver":"1","clean_dialog_history":"auto","scene":"main_box"},"iat":{"sample_rate":"16000"},"interact":{"interact_timeout":"-1","result_timeout":"5000"},"ivw":{"mic_type":"mic1","res_path":"AIUI/assets/vtn/vtn.ini"},"log":{"datalog_path":"","datalog_size":1024,"debug_log":"0","raw_audio_path":"","save_datalog":"0"},"login":{"api_secret":"MWI4MjgwYzdlZTY5YzljMjkzMjY5MGM3","appid":"e002001d","key":"40bf94a0e12e530644b4859323fb9077"},"recorder":{"channel_count":1,"channel_filter":"0,-1","sample_size":2},"speech":{"audio_captor":"system","data_source":"sdk","intent_engine_type":"cloud","interact_mode":"continuous","wakeup_mode":"off"},"tts":{"engine_type":"cloud"},"vad":{"engine_type":"meta"}}
+[2026/07/22 19:53:02 241] [P0x00001761] [T0x000017d0] D/PushConnection(line 271)       :getChid, spent 166ms, response:
+HTTP/1.1 200 OK
+Server: openresty
+Date: Wed, 22 Jul 2026 11:53:51 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+Connection: close
+
+{"ret":0,"uid":"d19390359246","chid":"cid0001f5b2@dx19f89accf4fa14d532","sid":"cau0001f5b1@dx19f89accf4ea14d532","err":"success"}
+
+[2026/07/22 19:53:02 242] [P0x00001761] [T0x000017d0] D/PushConnection(line 316)       :getChid, success, chid=cid0001f5b2@dx19f89accf4fa14d532.
+[2026/07/22 19:53:02 242] [P0x00001761] [T0x000017d0] D/DataReceiver(line 307)         :push connected.
+[2026/07/22 19:53:02 242] [P0x00001761] [T0x000017ce] I/AIUISession(line 429)          :connected to server.
+[2026/07/22 19:53:02 242] [P0x00001761] [T0x000017ce] D/ServerConnection(line 924)     :connect to server success
+[2026/07/22 19:53:02 242] [P0x00001761] [T0x000017ce] D/DataSender(line 897)           :clear ack error.
+[2026/07/22 19:53:07 096] [P0x00001761] [T0x000017a3] D/AIUIScheduler(line 1010)       :CMD_TTS
+[2026/07/22 19:53:07 097] [P0x00001761] [T0x000017a3] D/DataSender(line 520)           :set result timeout 15000ms for stream text-1, taskId=1001.
+[2026/07/22 19:53:07 097] [P0x00001761] [T0x000017a3] D/TextUploader(line 96)          :textParams={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-1","vcn":"x4_lingxiaoying_em_v2"}.
+[2026/07/22 19:53:07 097] [P0x00001761] [T0x000017cf] W/DataSender(line 608)           :up is non-connected, try to connect right now.
+[2026/07/22 19:53:07 097] [P0x00001761] [T0x000017a6] D/DataSender(line 1664)          :try to reconnect up.
+[2026/07/22 19:53:07 097] [P0x00001761] [T0x0000206e] D/WSConnection(line 410)         :start connecting, tid=8302, sessionNo=1.
+[2026/07/22 19:53:07 097] [P0x00001761] [T0x0000206e] D/WSConnection(line 299)         :createWebSocket, host=aiui-ipv6.openspeech.cn, ip=42.62.116.27.
+[2026/07/22 19:53:07 098] [P0x00001761] [T0x0000206e] D/WSConnection(line 325)         :connecting wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, tid=8302, sessionNo=1.
+[2026/07/22 19:53:07 098] [P0x00001761] [T0x0000206e] D/WSConnection(line 333)         :websocket, GET request:
+GET /aiui/v2.1/upload.do HTTP/1.1
+Origin: https://aiui-ipv6.openspeech.cn
+Host: aiui-ipv6.openspeech.cn
+
+
+
+[2026/07/22 19:53:07 246] [P0x00001761] [T0x0000206e] D/WSConnection(line 356)         :connected to wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, spent 149ms, tid=8302, sessionNo=1.
+[2026/07/22 19:53:07 246] [P0x00001761] [T0x0000206e] D/WSConnection(line 365)         :websocket, response:
+HTTP/1.1 101 Switching Protocols
+Server: openresty
+Date: Wed, 22 Jul 2026 11:53:56 GMT
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: qLkqY3012EHP6io+mRPJj5Bn5wo=
+
+
+
+[2026/07/22 19:53:07 246] [P0x00001761] [T0x0000206e] D/WSConnection(line 419)         :connect success, tid=8302, sessionNo=1.
+[2026/07/22 19:53:07 246] [P0x00001761] [T0x0000206e] D/DataSender(line 1429)          :up connected, try to send packet.
+[2026/07/22 19:53:07 246] [P0x00001761] [T0x0000206e] D/WSConnection(line 473)         :start receiving, tid=8302, sessionNo=1.
+[2026/07/22 19:53:07 247] [P0x00001761] [T0x000017cf] D/DataSender(line 698)           :send packet, ret=573, need_resend=0, send_cnt=1, sessionNo=1, info:
+streamId=text-1
+frameId=1
+sid=cid0001f5b2@dx19f89accf4ff040001
+dataType=0
+dataStatus=3
+dataLen=39
+args={"cnt_id":"0","dte":"","dtf":""}
+params={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-1","vcn":"x4_lingxiaoying_em_v2"}
+userParams=bnVsbA==
+
+[2026/07/22 19:53:07 282] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=65
+[2026/07/22 19:53:07 282] [P0x00001761] [T0x000017a6] D/DataSender(line 864)           :parsed data as ack, s2ack_time=35ms, info:
+streamId=text-1
+frameId=1
+retCode=0
+
+[2026/07/22 19:53:07 428] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/22 19:53:07 428] [P0x00001761] [T0x0000206e] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001f5b2@dx19f89accf4ff040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 19:53:07 428] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 19:53:07 429] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 19:53:07 429] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 19:53:07 429] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 484)      :sid=cid0001f5b2@dx19f89accf4ff040001
+[2026/07/22 19:53:07 429] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 19:53:07 429] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 19:53:07 432] [P0x00001761] [T0x000017a6] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 19:53:07 461] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/22 19:53:07 461] [P0x00001761] [T0x0000206e] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001f5b2@dx19f89accf4ff040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 19:53:07 462] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 19:53:07 463] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 19:53:07 463] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 19:53:07 463] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 484)      :sid=cid0001f5b2@dx19f89accf4ff040001
+[2026/07/22 19:53:07 463] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 19:53:07 463] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 19:53:07 463] [P0x00001761] [T0x000017a6] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 19:53:07 470] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=1770
+[2026/07/22 19:53:07 471] [P0x00001761] [T0x0000206e] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001f5b2@dx19f89accf4ff040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 19:53:07 471] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 19:53:07 472] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 19:53:07 472] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 19:53:07 472] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 484)      :sid=cid0001f5b2@dx19f89accf4ff040001
+[2026/07/22 19:53:07 472] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 19:53:07 472] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 19:53:07 473] [P0x00001761] [T0x000017a6] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 19:53:07 507] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/22 19:53:07 508] [P0x00001761] [T0x0000206e] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001f5b2@dx19f89accf4ff040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 19:53:07 508] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 19:53:07 509] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 19:53:07 509] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 19:53:07 509] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 484)      :sid=cid0001f5b2@dx19f89accf4ff040001
+[2026/07/22 19:53:07 509] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 19:53:07 509] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 19:53:07 509] [P0x00001761] [T0x000017a6] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 19:53:07 527] [P0x00001761] [T0x0000206e] D/WSConnection(line 523)         :receive 1456 bytes, incomplete ws frame.
+[2026/07/22 19:53:07 527] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/22 19:53:07 527] [P0x00001761] [T0x0000206e] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001f5b2@dx19f89accf4ff040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 19:53:07 528] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 19:53:07 529] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 19:53:07 529] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 19:53:07 529] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 484)      :sid=cid0001f5b2@dx19f89accf4ff040001
+[2026/07/22 19:53:07 529] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 19:53:07 529] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 19:53:07 529] [P0x00001761] [T0x000017a6] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 19:53:07 550] [P0x00001761] [T0x0000206e] D/WSConnection(line 603)         :receive data completely, dataLen=2026
+[2026/07/22 19:53:07 550] [P0x00001761] [T0x0000206e] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001f5b2@dx19f89accf4ff040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":6,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 19:53:07 550] [P0x00001761] [T0x0000206e] D/DataSender(line 472)           :receive stream completed, streamId=text-1.
+[2026/07/22 19:53:07 550] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 19:53:07 551] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 19:53:07 551] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 19:53:07 551] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 484)      :sid=cid0001f5b2@dx19f89accf4ff040001
+[2026/07/22 19:53:07 551] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 19:53:07 551] [P0x00001761] [T0x000017ce] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":6,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 19:53:07 551] [P0x00001761] [T0x000017a6] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 19:53:10 553] [P0x00001761] [T0x0000206e] D/WSConnection(line 566)         :receive timeout, try again
+[2026/07/22 19:54:30 057] [P0x00001761] [T0x0000206e] D/WSConnection(line 537)         :connection free reaches 30s, client auto disconnected.
+[2026/07/22 19:54:30 057] [P0x00001761] [T0x0000206e] D/WSConnection(line 385)         :destroyWebSocket.
+[2026/07/22 19:54:30 057] [P0x00001761] [T0x0000206e] W/DataSender(line 1425)          :up disconnected.
+[2026/07/22 19:54:30 057] [P0x00001761] [T0x0000206e] D/WSConnection(line 598)         :receive stopped, tid=8302, sessionNo=1.
+================================================================
+Time 2026/07/22 20:27:58 499
+================================================================
+[2026/07/22 20:27:58 601] [P0x00000e68] [T0x00000e68] I/AIUISession(line 65)           :session begin, aiui_ver=1, sessionNo=1.
+[2026/07/22 20:27:58 613] [P0x00000e68] [T0x00000e68] D/NameServer(line 263)           :resolveHost begin, ignoreCache=0.
+[2026/07/22 20:27:58 673] [P0x00000e68] [T0x00000ece] D/NameServer(line 151)           :dns resolve hdns.openspeech.cn as [101.200.180.128], spent 56ms.
+[2026/07/22 20:27:58 673] [P0x00000e68] [T0x00000ece] D/NameServer(line 176)           :ipv6_support=1, is_ipv6_prior=0, ip_env=MIXED, use ip 101.200.180.128.
+[2026/07/22 20:27:58 673] [P0x00000e68] [T0x00000ece] D/NameServer(line 207)           :getNameServerResult, GET request:
+GET /sip/resolver?srand=0722202730.60 HTTP/1.1
+Connection: Close
+Accept-Encoding: gzip
+Host: hdns.openspeech.cn
+X-Par: ver=1.3&appid=e002001d&operator=&nettype=&cver=6.6.0001.0047&svc=aiui&host=aiui-ipv6.openspeech.cn&sign=1ec1a5bbc34b0d263e5e3437ede27ed1
+
+
+[2026/07/22 20:27:58 755] [P0x00000e68] [T0x00000ece] D/NameServer(line 221)           :getNameServerResult, spent 81ms, response:
+{"dns":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.26","port":80,"idc":"dx"},{"ip":"42.62.116.27","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}],"default":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.27","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}]}
+
+[2026/07/22 20:27:58 755] [P0x00000e68] [T0x00000ece] D/NameServer(line 507)           :dns nameserver resolve aiui-ipv6.openspeech.cn as [42.62.116.26, 42.62.116.27], spent 141ms, ttl=6000.
+[2026/07/22 20:27:58 755] [P0x00000e68] [T0x00000ece] D/NameServer(line 533)           :dns nameserver set current address 42.62.116.26:80.
+[2026/07/22 20:27:58 755] [P0x00000e68] [T0x00000ece] D/NameServer(line 537)           :dns nameserver update.
+[2026/07/22 20:27:58 756] [P0x00000e68] [T0x00000ece] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/22 20:27:58 783] [P0x00000e68] [T0x00000e68] D/NameServer(line 301)           :dns resolve aiui-ipv6.openspeech.cn as [240e:83:9001:2a::3, 240e:83:9001:2a::10, 124.243.239.171, 42.62.116.26, 124.243.239.172], spent 27ms.
+[2026/07/22 20:27:58 793] [P0x00000e68] [T0x00000e68] I/DataSender(line 72)            :start sender.
+[2026/07/22 20:27:58 799] [P0x00000e68] [T0x00000e68] I/DataSender(line 135)           :started success.
+[2026/07/22 20:27:58 799] [P0x00000e68] [T0x00000e68] I/DataReceiver(line 46)          :start receiver.
+[2026/07/22 20:27:58 799] [P0x00000e68] [T0x00000e68] I/DataReceiver(line 94)          :started success.
+[2026/07/22 20:27:58 799] [P0x00000e68] [T0x00000e68] I/AIUISession(line 150)          :session has begun, spent 198ms.
+[2026/07/22 20:27:58 805] [P0x00000e68] [T0x00000edd] D/PushConnection(line 222)       :getChidHttps, host=aiui-ipv6.openspeech.cn, hostIP=42.62.116.26.
+[2026/07/22 20:27:58 805] [P0x00000e68] [T0x00000edd] D/PushConnection(line 251)       :getChid, POST request:
+POST /v1.1/server/register HTTP/1.1
+Host: aiui-ipv6.openspeech.cn
+Content-Type: text/json
+Connection: Close
+Content-Length: 477
+
+{"appid":"e002001d","cmd":1,"encrypt_key":"","lgi_params":{"app.name":"wheeltec_mic_ai","app.path":"/home/nvidia/wheeltec_ros2/src/wheeltec_mic_aiui/libs/arm64/","auth_id":"","cver":"6.6.0001.0047","dev_lang":"cpp","imei":"","key":"40bf94a0e12e530644b4859323fb9077","mac":"00:00:00:00:00:00","openudid":"","os_sys":"Linux","prot_type":"pb","pwd":"","sn":"dc:4a:9e:35:8f:31","unique_id":"2e5340e30c8430e24e664bea58f9e7772","usr":"","ver_type":"desktop_pc"},"uid":"d19390359246"}
+
+[2026/07/22 20:27:58 811] [P0x00000e68] [T0x00000e68] D/ConverterFactory(line 21)      :converter name default
+[2026/07/22 20:27:58 811] [P0x00000e68] [T0x00000e68] I/Converter(line 53)             :need_channels_ 2
+[2026/07/22 20:27:58 811] [P0x00000e68] [T0x00000e68] D/SpeechModule(line 88)          :data source sdk
+[2026/07/22 20:27:58 811] [P0x00000e68] [T0x00000e68] D/SpeechModule(line 122)         :SpeechModule started.
+[2026/07/22 20:27:58 811] [P0x00000e68] [T0x00000e68] I/AIUIScheduler(line 466)        :AIUIScheduler started
+[2026/07/22 20:27:58 811] [P0x00000e68] [T0x00000e68] D/AIUIAgent(line 139)            :AIUI version=6.6.0001.0047 params={"cbmparams":{"nlp":{"nlp":{"compress":"raw","encoding":"utf8","format":"json"},"sub_scene":"cbm_v45"}},"global":{"aiui_ver":"1","clean_dialog_history":"auto","scene":"main_box"},"iat":{"sample_rate":"16000"},"interact":{"interact_timeout":"-1","result_timeout":"5000"},"ivw":{"mic_type":"mic1","res_path":"AIUI/assets/vtn/vtn.ini"},"log":{"datalog_path":"","datalog_size":1024,"debug_log":"0","raw_audio_path":"","save_datalog":"0"},"login":{"api_secret":"MWI4MjgwYzdlZTY5YzljMjkzMjY5MGM3","appid":"e002001d","key":"40bf94a0e12e530644b4859323fb9077"},"recorder":{"channel_count":1,"channel_filter":"0,-1","sample_size":2},"speech":{"audio_captor":"system","data_source":"sdk","intent_engine_type":"cloud","interact_mode":"continuous","wakeup_mode":"off"},"tts":{"engine_type":"cloud"},"vad":{"engine_type":"meta"}}
+[2026/07/22 20:27:58 983] [P0x00000e68] [T0x00000edd] D/PushConnection(line 271)       :getChid, spent 178ms, response:
+HTTP/1.1 200 OK
+Server: openresty
+Date: Thu, 23 Jul 2026 01:24:56 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+Connection: close
+
+{"ret":0,"uid":"d19390359246","chid":"cid00013cd4@dx19f8c935e74b85d532","sid":"cau00013ccb@dx19f8c935e6cb85d532","err":"success"}
+
+[2026/07/22 20:27:58 984] [P0x00000e68] [T0x00000edd] D/PushConnection(line 316)       :getChid, success, chid=cid00013cd4@dx19f8c935e74b85d532.
+[2026/07/22 20:27:58 984] [P0x00000e68] [T0x00000edd] D/DataReceiver(line 307)         :push connected.
+[2026/07/22 20:27:58 984] [P0x00000e68] [T0x00000edb] I/AIUISession(line 429)          :connected to server.
+[2026/07/22 20:27:58 984] [P0x00000e68] [T0x00000edb] D/ServerConnection(line 924)     :connect to server success
+[2026/07/22 20:27:58 984] [P0x00000e68] [T0x00000edb] D/DataSender(line 897)           :clear ack error.
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00000eca] D/AIUIScheduler(line 1010)       :CMD_TTS
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00000eca] D/DataSender(line 520)           :set result timeout 15000ms for stream text-1, taskId=1001.
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00000eca] D/TextUploader(line 96)          :textParams={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-1","vcn":"x4_lingxiaoying_em_v2"}.
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00000edc] W/DataSender(line 608)           :up is non-connected, try to connect right now.
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1664)          :try to reconnect up.
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00001453] D/WSConnection(line 410)         :start connecting, tid=5203, sessionNo=1.
+[2026/07/22 20:28:02 731] [P0x00000e68] [T0x00001453] D/WSConnection(line 299)         :createWebSocket, host=aiui-ipv6.openspeech.cn, ip=42.62.116.26.
+[2026/07/22 20:28:02 732] [P0x00000e68] [T0x00001453] D/WSConnection(line 325)         :connecting wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, tid=5203, sessionNo=1.
+[2026/07/22 20:28:02 732] [P0x00000e68] [T0x00001453] D/WSConnection(line 333)         :websocket, GET request:
+GET /aiui/v2.1/upload.do HTTP/1.1
+Origin: https://aiui-ipv6.openspeech.cn
+Host: aiui-ipv6.openspeech.cn
+
+
+
+[2026/07/22 20:28:02 903] [P0x00000e68] [T0x00001453] D/WSConnection(line 356)         :connected to wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, spent 172ms, tid=5203, sessionNo=1.
+[2026/07/22 20:28:02 903] [P0x00000e68] [T0x00001453] D/WSConnection(line 365)         :websocket, response:
+HTTP/1.1 101 Switching Protocols
+Server: openresty
+Date: Thu, 23 Jul 2026 01:24:59 GMT
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: QPRlslFS1Z/JXOrhy4CJEeKbmVM=
+
+
+
+[2026/07/22 20:28:02 903] [P0x00000e68] [T0x00001453] D/WSConnection(line 419)         :connect success, tid=5203, sessionNo=1.
+[2026/07/22 20:28:02 903] [P0x00000e68] [T0x00001453] D/DataSender(line 1429)          :up connected, try to send packet.
+[2026/07/22 20:28:02 904] [P0x00000e68] [T0x00001453] D/WSConnection(line 473)         :start receiving, tid=5203, sessionNo=1.
+[2026/07/22 20:28:02 904] [P0x00000e68] [T0x00000edc] D/DataSender(line 698)           :send packet, ret=573, need_resend=0, send_cnt=1, sessionNo=1, info:
+streamId=text-1
+frameId=1
+sid=cid00013cd4@dx19f8c935e74e040001
+dataType=0
+dataStatus=3
+dataLen=39
+args={"cnt_id":"0","dte":"","dtf":""}
+params={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-1","vcn":"x4_lingxiaoying_em_v2"}
+userParams=bnVsbA==
+
+[2026/07/22 20:28:02 942] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=65
+[2026/07/22 20:28:02 943] [P0x00000e68] [T0x00000ecd] D/DataSender(line 864)           :parsed data as ack, s2ack_time=39ms, info:
+streamId=text-1
+frameId=1
+retCode=0
+
+[2026/07/22 20:28:03 175] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/22 20:28:03 175] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 175] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 176] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 176] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 176] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 176] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 176] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 177] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:03 222] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/22 20:28:03 223] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 223] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 224] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 224] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 224] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 224] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 224] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 224] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:03 272] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=1162
+[2026/07/22 20:28:03 273] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 273] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=1050
+[2026/07/22 20:28:03 273] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 273] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:03 274] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:03 366] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 367] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 368] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:03 432] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/22 20:28:03 433] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":6,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 434] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 435] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 435] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 435] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 435] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 435] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":6,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 436] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:03 514] [P0x00000e68] [T0x00001453] D/WSConnection(line 603)         :receive data completely, dataLen=2026
+[2026/07/22 20:28:03 514] [P0x00000e68] [T0x00001453] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid00013cd4@dx19f8c935e74e040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":7,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/22 20:28:03 514] [P0x00000e68] [T0x00001453] D/DataSender(line 472)           :receive stream completed, streamId=text-1.
+[2026/07/22 20:28:03 514] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/22 20:28:03 515] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/22 20:28:03 515] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/22 20:28:03 515] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 484)      :sid=cid00013cd4@dx19f8c935e74e040001
+[2026/07/22 20:28:03 515] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/22 20:28:03 515] [P0x00000e68] [T0x00000edb] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":7,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/22 20:28:03 515] [P0x00000e68] [T0x00000ecd] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/22 20:28:06 517] [P0x00000e68] [T0x00001453] D/WSConnection(line 566)         :receive timeout, try again
+[2026/07/23 09:25:33 633] [P0x00000e68] [T0x00001453] D/WSConnection(line 537)         :connection free reaches 30s, client auto disconnected.
+[2026/07/23 09:25:33 633] [P0x00000e68] [T0x00001453] D/WSConnection(line 385)         :destroyWebSocket.
+[2026/07/23 09:25:33 633] [P0x00000e68] [T0x00001453] W/DataSender(line 1425)          :up disconnected.
+[2026/07/23 09:25:33 633] [P0x00000e68] [T0x00001453] D/WSConnection(line 598)         :receive stopped, tid=5203, sessionNo=1.
+[2026/07/23 11:04:55 951] [P0x00000e68] [T0x0009f171] D/NameServer(line 160)           :dns lookup hdns.openspeech.cn as [101.200.180.128].
+[2026/07/23 11:04:55 952] [P0x00000e68] [T0x0009f171] D/NameServer(line 176)           :ipv6_support=1, is_ipv6_prior=0, ip_env=MIXED, use ip 101.200.180.128.
+[2026/07/23 11:04:55 952] [P0x00000e68] [T0x0009f171] D/NameServer(line 207)           :getNameServerResult, GET request:
+GET /sip/resolver?srand=0723110488.28 HTTP/1.1
+Connection: Close
+Accept-Encoding: gzip
+Host: hdns.openspeech.cn
+X-Par: ver=1.3&appid=e002001d&operator=&nettype=&cver=6.6.0001.0047&svc=aiui&host=aiui-ipv6.openspeech.cn&sign=2b5bd55e69904d9682878b7ec385c612
+
+
+[2026/07/23 11:04:56 062] [P0x00000e68] [T0x0009f171] D/NameServer(line 221)           :getNameServerResult, spent 110ms, response:
+{"dns":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.26","port":80,"idc":"dx"},{"ip":"42.62.116.27","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}],"default":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.27","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}]}
+
+[2026/07/23 11:04:56 063] [P0x00000e68] [T0x0009f171] D/NameServer(line 507)           :dns nameserver resolve aiui-ipv6.openspeech.cn as [42.62.116.26, 42.62.116.27], spent 116ms, ttl=6000.
+[2026/07/23 11:04:56 063] [P0x00000e68] [T0x0009f171] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/23 11:04:56 063] [P0x00000e68] [T0x0009f171] D/NameServer(line 548)           :Server ip list and Cache ip list is totally different, reconnect.
+[2026/07/23 11:04:56 067] [P0x00000e68] [T0x0009f171] D/NameServer(line 643)           :dns resolve aiui-ipv6.openspeech.cn as [240e:83:9001:2a::3, 240e:83:9001:2a::10, 124.243.239.171, 42.62.116.26, 124.243.239.172], spent 0ms.
+[2026/07/23 11:04:56 067] [P0x00000e68] [T0x00000edb] D/AIUISession(line 561)          :reset connection, allFailed=0.
+[2026/07/23 11:04:56 067] [P0x00000e68] [T0x00000edb] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/23 11:04:56 069] [P0x00000e68] [T0x0009f191] D/PushConnection(line 222)       :getChidHttps, host=aiui-ipv6.openspeech.cn, hostIP=42.62.116.27.
+[2026/07/23 11:04:56 070] [P0x00000e68] [T0x0009f191] D/PushConnection(line 251)       :getChid, POST request:
+POST /v1.1/server/register HTTP/1.1
+Host: aiui-ipv6.openspeech.cn
+Content-Type: text/json
+Connection: Close
+Content-Length: 477
+
+{"appid":"e002001d","cmd":1,"encrypt_key":"","lgi_params":{"app.name":"wheeltec_mic_ai","app.path":"/home/nvidia/wheeltec_ros2/src/wheeltec_mic_aiui/libs/arm64/","auth_id":"","cver":"6.6.0001.0047","dev_lang":"cpp","imei":"","key":"40bf94a0e12e530644b4859323fb9077","mac":"00:00:00:00:00:00","openudid":"","os_sys":"Linux","prot_type":"pb","pwd":"","sn":"dc:4a:9e:35:8f:31","unique_id":"2e5340e30c8430e24e664bea58f9e7772","usr":"","ver_type":"desktop_pc"},"uid":"d19390359246"}
+
+[2026/07/23 11:04:56 252] [P0x00000e68] [T0x0009f191] D/PushConnection(line 271)       :getChid, spent 181ms, response:
+HTTP/1.1 200 OK
+Server: openresty
+Date: Thu, 23 Jul 2026 03:04:56 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+Connection: close
+
+{"ret":0,"uid":"d19390359246","chid":"cid000118f7@dx19f8ceeeca5a168532","sid":"cau000118f6@dx19f8ceeeca4a168532","err":"success"}
+
+[2026/07/23 11:04:56 252] [P0x00000e68] [T0x0009f191] D/PushConnection(line 316)       :getChid, success, chid=cid000118f7@dx19f8ceeeca5a168532.
+[2026/07/23 11:04:56 253] [P0x00000e68] [T0x0009f191] D/DataReceiver(line 307)         :push connected.
+[2026/07/23 11:04:56 253] [P0x00000e68] [T0x00000edb] I/AIUISession(line 429)          :connected to server.
+[2026/07/23 11:04:56 253] [P0x00000e68] [T0x00000edb] D/ServerConnection(line 924)     :connect to server success
+[2026/07/23 11:04:56 253] [P0x00000e68] [T0x00000edb] D/DataSender(line 897)           :clear ack error.
+================================================================
+Time 2026/07/23 11:41:28 442
+================================================================
+[2026/07/23 11:41:28 513] [P0x000016cb] [T0x000016cb] I/AIUISession(line 65)           :session begin, aiui_ver=1, sessionNo=1.
+[2026/07/23 11:41:28 520] [P0x000016cb] [T0x000016cb] D/NameServer(line 263)           :resolveHost begin, ignoreCache=0.
+[2026/07/23 11:41:28 570] [P0x000016cb] [T0x00001734] D/NameServer(line 151)           :dns resolve hdns.openspeech.cn as [101.200.180.128], spent 46ms.
+[2026/07/23 11:41:28 570] [P0x000016cb] [T0x00001734] D/NameServer(line 176)           :ipv6_support=1, is_ipv6_prior=0, ip_env=MIXED, use ip 101.200.180.128.
+[2026/07/23 11:41:28 570] [P0x000016cb] [T0x00001734] D/NameServer(line 207)           :getNameServerResult, GET request:
+GET /sip/resolver?srand=0723114115.15 HTTP/1.1
+Connection: Close
+Accept-Encoding: gzip
+Host: hdns.openspeech.cn
+X-Par: ver=1.3&appid=e002001d&operator=&nettype=&cver=6.6.0001.0047&svc=aiui&host=aiui-ipv6.openspeech.cn&sign=764604f63201b3e567f5f532f9848362
+
+
+[2026/07/23 11:41:28 652] [P0x000016cb] [T0x00001734] D/NameServer(line 221)           :getNameServerResult, spent 82ms, response:
+{"dns":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.26","port":80,"idc":"dx"},{"ip":"42.62.116.27","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}],"default":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.27","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}]}
+
+[2026/07/23 11:41:28 653] [P0x000016cb] [T0x00001734] D/NameServer(line 507)           :dns nameserver resolve aiui-ipv6.openspeech.cn as [42.62.116.26, 42.62.116.27], spent 130ms, ttl=6000.
+[2026/07/23 11:41:28 653] [P0x000016cb] [T0x00001734] D/NameServer(line 533)           :dns nameserver set current address 42.62.116.26:80.
+[2026/07/23 11:41:28 653] [P0x000016cb] [T0x00001734] D/NameServer(line 537)           :dns nameserver update.
+[2026/07/23 11:41:28 653] [P0x000016cb] [T0x00001734] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/23 11:41:28 689] [P0x000016cb] [T0x000016cb] D/NameServer(line 301)           :dns resolve aiui-ipv6.openspeech.cn as [240e:83:9001:2a::3, 240e:83:9001:2a::10, 42.62.116.26, 124.243.239.171, 124.243.239.172], spent 35ms.
+[2026/07/23 11:41:28 700] [P0x000016cb] [T0x000016cb] I/DataSender(line 72)            :start sender.
+[2026/07/23 11:41:28 703] [P0x000016cb] [T0x000016cb] I/DataSender(line 135)           :started success.
+[2026/07/23 11:41:28 703] [P0x000016cb] [T0x000016cb] I/DataReceiver(line 46)          :start receiver.
+[2026/07/23 11:41:28 703] [P0x000016cb] [T0x000016cb] I/DataReceiver(line 94)          :started success.
+[2026/07/23 11:41:28 703] [P0x000016cb] [T0x000016cb] I/AIUISession(line 150)          :session has begun, spent 190ms.
+[2026/07/23 11:41:28 704] [P0x000016cb] [T0x000016cb] D/ConverterFactory(line 21)      :converter name default
+[2026/07/23 11:41:28 704] [P0x000016cb] [T0x000016cb] I/Converter(line 53)             :need_channels_ 2
+[2026/07/23 11:41:28 704] [P0x000016cb] [T0x000016cb] D/SpeechModule(line 88)          :data source sdk
+[2026/07/23 11:41:28 704] [P0x000016cb] [T0x000016cb] D/SpeechModule(line 122)         :SpeechModule started.
+[2026/07/23 11:41:28 705] [P0x000016cb] [T0x000016cb] I/AIUIScheduler(line 466)        :AIUIScheduler started
+[2026/07/23 11:41:28 705] [P0x000016cb] [T0x000016cb] D/AIUIAgent(line 139)            :AIUI version=6.6.0001.0047 params={"cbmparams":{"nlp":{"nlp":{"compress":"raw","encoding":"utf8","format":"json"},"sub_scene":"cbm_v45"}},"global":{"aiui_ver":"1","clean_dialog_history":"auto","scene":"main_box"},"iat":{"sample_rate":"16000"},"interact":{"interact_timeout":"-1","result_timeout":"5000"},"ivw":{"mic_type":"mic1","res_path":"AIUI/assets/vtn/vtn.ini"},"log":{"datalog_path":"","datalog_size":1024,"debug_log":"0","raw_audio_path":"","save_datalog":"0"},"login":{"api_secret":"MWI4MjgwYzdlZTY5YzljMjkzMjY5MGM3","appid":"e002001d","key":"40bf94a0e12e530644b4859323fb9077"},"recorder":{"channel_count":1,"channel_filter":"0,-1","sample_size":2},"speech":{"audio_captor":"system","data_source":"sdk","intent_engine_type":"cloud","interact_mode":"continuous","wakeup_mode":"off"},"tts":{"engine_type":"cloud"},"vad":{"engine_type":"meta"}}
+[2026/07/23 11:41:33 401] [P0x000016cb] [T0x00001730] D/AIUIScheduler(line 1010)       :CMD_TTS
+[2026/07/23 11:41:33 401] [P0x000016cb] [T0x00001730] D/DataSender(line 520)           :set result timeout 15000ms for stream text-1, taskId=1001.
+[2026/07/23 11:41:33 401] [P0x000016cb] [T0x00001730] D/TextUploader(line 96)          :textParams={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-1","vcn":"x4_lingxiaoying_em_v2"}.
+[2026/07/23 11:41:33 401] [P0x000016cb] [T0x0000173d] W/DataSender(line 595)           :not logined, reset connection.
+[2026/07/23 11:41:33 402] [P0x000016cb] [T0x0000173c] D/AIUISession(line 561)          :reset connection, allFailed=0.
+[2026/07/23 11:41:33 402] [P0x000016cb] [T0x0000173c] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/23 11:41:33 402] [P0x000016cb] [T0x00002175] D/PushConnection(line 222)       :getChidHttps, host=aiui-ipv6.openspeech.cn, hostIP=42.62.116.27.
+[2026/07/23 11:41:33 402] [P0x000016cb] [T0x00002175] D/PushConnection(line 251)       :getChid, POST request:
+POST /v1.1/server/register HTTP/1.1
+Host: aiui-ipv6.openspeech.cn
+Content-Type: text/json
+Connection: Close
+Content-Length: 477
+
+{"appid":"e002001d","cmd":1,"encrypt_key":"","lgi_params":{"app.name":"wheeltec_mic_ai","app.path":"/home/nvidia/wheeltec_ros2/src/wheeltec_mic_aiui/libs/arm64/","auth_id":"","cver":"6.6.0001.0047","dev_lang":"cpp","imei":"","key":"40bf94a0e12e530644b4859323fb9077","mac":"dc:4a:9e:35:8f:31","openudid":"","os_sys":"Linux","prot_type":"pb","pwd":"","sn":"dc:4a:9e:35:8f:31","unique_id":"2e5340e30c8430e24e664bea58f9e7772","usr":"","ver_type":"desktop_pc"},"uid":"d19390359246"}
+
+[2026/07/23 11:41:33 598] [P0x000016cb] [T0x00002175] D/PushConnection(line 271)       :getChid, spent 195ms, response:
+HTTP/1.1 200 OK
+Server: openresty
+Date: Thu, 23 Jul 2026 03:53:39 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+Connection: close
+
+{"ret":0,"uid":"d19390359246","chid":"cid0001982a@dx19f8d1b872f9a20532","sid":"cau00019829@dx19f8d1b872f9a20532","err":"success"}
+
+[2026/07/23 11:41:33 598] [P0x000016cb] [T0x00002175] D/PushConnection(line 316)       :getChid, success, chid=cid0001982a@dx19f8d1b872f9a20532.
+[2026/07/23 11:41:33 598] [P0x000016cb] [T0x00002175] D/DataReceiver(line 307)         :push connected.
+[2026/07/23 11:41:33 599] [P0x000016cb] [T0x0000173c] I/AIUISession(line 429)          :connected to server.
+[2026/07/23 11:41:33 599] [P0x000016cb] [T0x0000173c] D/ServerConnection(line 924)     :connect to server success
+[2026/07/23 11:41:33 599] [P0x000016cb] [T0x0000173c] D/DataSender(line 897)           :clear ack error.
+[2026/07/23 11:41:33 599] [P0x000016cb] [T0x0000173d] W/DataSender(line 608)           :up is non-connected, try to connect right now.
+[2026/07/23 11:41:33 599] [P0x000016cb] [T0x00001733] D/DataSender(line 1664)          :try to reconnect up.
+[2026/07/23 11:41:33 600] [P0x000016cb] [T0x000021bf] D/WSConnection(line 410)         :start connecting, tid=8639, sessionNo=1.
+[2026/07/23 11:41:33 600] [P0x000016cb] [T0x000021bf] D/WSConnection(line 299)         :createWebSocket, host=aiui-ipv6.openspeech.cn, ip=42.62.116.27.
+[2026/07/23 11:41:33 600] [P0x000016cb] [T0x000021bf] D/WSConnection(line 325)         :connecting wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, tid=8639, sessionNo=1.
+[2026/07/23 11:41:33 600] [P0x000016cb] [T0x000021bf] D/WSConnection(line 333)         :websocket, GET request:
+GET /aiui/v2.1/upload.do HTTP/1.1
+Origin: https://aiui-ipv6.openspeech.cn
+Host: aiui-ipv6.openspeech.cn
+
+
+
+[2026/07/23 11:41:33 767] [P0x000016cb] [T0x000021bf] D/WSConnection(line 356)         :connected to wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, spent 166ms, tid=8639, sessionNo=1.
+[2026/07/23 11:41:33 767] [P0x000016cb] [T0x000021bf] D/WSConnection(line 365)         :websocket, response:
+HTTP/1.1 101 Switching Protocols
+Server: openresty
+Date: Thu, 23 Jul 2026 03:53:39 GMT
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: 5BRdHR8uiNDvK9dTDdRILZ/JUtw=
+
+
+
+[2026/07/23 11:41:33 767] [P0x000016cb] [T0x000021bf] D/WSConnection(line 419)         :connect success, tid=8639, sessionNo=1.
+[2026/07/23 11:41:33 767] [P0x000016cb] [T0x000021bf] D/DataSender(line 1429)          :up connected, try to send packet.
+[2026/07/23 11:41:33 767] [P0x000016cb] [T0x000021bf] D/WSConnection(line 473)         :start receiving, tid=8639, sessionNo=1.
+[2026/07/23 11:41:33 768] [P0x000016cb] [T0x0000173d] D/DataSender(line 698)           :send packet, ret=573, need_resend=0, send_cnt=1, sessionNo=1, info:
+streamId=text-1
+frameId=1
+sid=cid0001982a@dx19f8d1b872f9040001
+dataType=0
+dataStatus=3
+dataLen=39
+args={"cnt_id":"0","dte":"","dtf":""}
+params={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-1","vcn":"x4_lingxiaoying_em_v2"}
+userParams=bnVsbA==
+
+[2026/07/23 11:41:33 807] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=65
+[2026/07/23 11:41:33 807] [P0x000016cb] [T0x00001733] D/DataSender(line 864)           :parsed data as ack, s2ack_time=39ms, info:
+streamId=text-1
+frameId=1
+retCode=0
+
+[2026/07/23 11:41:33 997] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/23 11:41:33 998] [P0x000016cb] [T0x000021bf] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001982a@dx19f8d1b872f9040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:41:33 998] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:41:33 999] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/23 11:41:33 999] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:41:33 999] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b872f9040001
+[2026/07/23 11:41:33 999] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/23 11:41:33 999] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:41:33 999] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/23 11:41:34 038] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/23 11:41:34 038] [P0x000016cb] [T0x000021bf] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001982a@dx19f8d1b872f9040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:41:34 038] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:41:34 039] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/23 11:41:34 039] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:41:34 039] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b872f9040001
+[2026/07/23 11:41:34 039] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/23 11:41:34 039] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:41:34 039] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/23 11:41:34 067] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=1786
+[2026/07/23 11:41:34 067] [P0x000016cb] [T0x000021bf] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001982a@dx19f8d1b872f9040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:41:34 067] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:41:34 068] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/23 11:41:34 068] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:41:34 068] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b872f9040001
+[2026/07/23 11:41:34 068] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/23 11:41:34 068] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:41:34 068] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/23 11:41:34 108] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/23 11:41:34 108] [P0x000016cb] [T0x000021bf] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001982a@dx19f8d1b872f9040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b872f9040001
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:41:34 109] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/23 11:41:34 128] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/23 11:41:34 128] [P0x000016cb] [T0x000021bf] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001982a@dx19f8d1b872f9040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:41:34 128] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:41:34 129] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/23 11:41:34 129] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:41:34 129] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b872f9040001
+[2026/07/23 11:41:34 129] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/23 11:41:34 129] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:41:34 129] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/23 11:41:34 157] [P0x000016cb] [T0x000021bf] D/WSConnection(line 603)         :receive data completely, dataLen=2026
+[2026/07/23 11:41:34 157] [P0x000016cb] [T0x000021bf] D/DataSender(line 1461)          :parsed data as result, stmid=text-1, sid=cid0001982a@dx19f8d1b872f9040001, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":6,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:41:34 157] [P0x000016cb] [T0x000021bf] D/DataSender(line 472)           :receive stream completed, streamId=text-1.
+[2026/07/23 11:41:34 157] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:41:34 158] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=1
+[2026/07/23 11:41:34 158] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:41:34 158] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b872f9040001
+[2026/07/23 11:41:34 158] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-1
+[2026/07/23 11:41:34 158] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":6,"text_end":39,"text_percent":100,"text_seg":"初始化完成，可直接执行功能","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:41:34 158] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-1 received result, reset the continued timeout count.
+[2026/07/23 11:41:37 160] [P0x000016cb] [T0x000021bf] D/WSConnection(line 566)         :receive timeout, try again
+[2026/07/23 11:54:12 001] [P0x000016cb] [T0x000021bf] D/WSConnection(line 537)         :connection free reaches 30s, client auto disconnected.
+[2026/07/23 11:54:12 001] [P0x000016cb] [T0x000021bf] D/WSConnection(line 385)         :destroyWebSocket.
+[2026/07/23 11:54:12 001] [P0x000016cb] [T0x000021bf] W/DataSender(line 1425)          :up disconnected.
+[2026/07/23 11:54:12 001] [P0x000016cb] [T0x000021bf] D/WSConnection(line 598)         :receive stopped, tid=8639, sessionNo=1.
+[2026/07/23 11:54:43 537] [P0x000016cb] [T0x00001730] D/AIUIScheduler(line 1010)       :CMD_TTS
+[2026/07/23 11:54:43 538] [P0x000016cb] [T0x00001730] D/DataSender(line 520)           :set result timeout 15000ms for stream text-2, taskId=1003.
+[2026/07/23 11:54:43 538] [P0x000016cb] [T0x00001730] D/TextUploader(line 96)          :textParams={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-2","vcn":"x4_lingxiaoying_em_v2"}.
+[2026/07/23 11:54:43 539] [P0x000016cb] [T0x0000173d] W/DataSender(line 608)           :up is non-connected, try to connect right now.
+[2026/07/23 11:54:43 539] [P0x000016cb] [T0x00001733] D/DataSender(line 1664)          :try to reconnect up.
+[2026/07/23 11:54:43 540] [P0x000016cb] [T0x00004929] D/WSConnection(line 410)         :start connecting, tid=18729, sessionNo=1.
+[2026/07/23 11:54:43 540] [P0x000016cb] [T0x00004929] D/WSConnection(line 299)         :createWebSocket, host=aiui-ipv6.openspeech.cn, ip=42.62.116.27.
+[2026/07/23 11:54:43 540] [P0x000016cb] [T0x00004929] D/WSConnection(line 325)         :connecting wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, tid=18729, sessionNo=1.
+[2026/07/23 11:54:43 540] [P0x000016cb] [T0x00004929] D/WSConnection(line 333)         :websocket, GET request:
+GET /aiui/v2.1/upload.do HTTP/1.1
+Origin: https://aiui-ipv6.openspeech.cn
+Host: aiui-ipv6.openspeech.cn
+
+
+
+[2026/07/23 11:54:43 712] [P0x000016cb] [T0x00004929] D/WSConnection(line 356)         :connected to wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, spent 172ms, tid=18729, sessionNo=1.
+[2026/07/23 11:54:43 712] [P0x000016cb] [T0x00004929] D/WSConnection(line 365)         :websocket, response:
+HTTP/1.1 101 Switching Protocols
+Server: openresty
+Date: Thu, 23 Jul 2026 03:54:43 GMT
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: PtoCP4PBVjMP+vMvaMbagxWD0tQ=
+
+
+
+[2026/07/23 11:54:43 712] [P0x000016cb] [T0x00004929] D/WSConnection(line 419)         :connect success, tid=18729, sessionNo=1.
+[2026/07/23 11:54:43 712] [P0x000016cb] [T0x00004929] D/DataSender(line 1429)          :up connected, try to send packet.
+[2026/07/23 11:54:43 712] [P0x000016cb] [T0x00004929] D/WSConnection(line 473)         :start receiving, tid=18729, sessionNo=1.
+[2026/07/23 11:54:43 712] [P0x000016cb] [T0x0000173d] D/DataSender(line 698)           :send packet, ret=586, need_resend=0, send_cnt=1, sessionNo=1, info:
+streamId=text-2
+frameId=1
+sid=cid0001982a@dx19f8d1b87339040002
+dataType=0
+dataStatus=3
+dataLen=52
+args={"cnt_id":"0","dte":"","dtf":""}
+params={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-2","vcn":"x4_lingxiaoying_em_v2"}
+userParams=bnVsbA==
+
+[2026/07/23 11:54:43 751] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=65
+[2026/07/23 11:54:43 752] [P0x000016cb] [T0x00001733] D/DataSender(line 864)           :parsed data as ack, s2ack_time=39ms, info:
+streamId=text-2
+frameId=1
+retCode=0
+
+[2026/07/23 11:54:43 932] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1882
+[2026/07/23 11:54:43 932] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:43 932] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1722
+[2026/07/23 11:54:43 932] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:43 932] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:43 933] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:43 933] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:43 933] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:43 933] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:43 933] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:43 933] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:43 934] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:43 962] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/23 11:54:43 962] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:43 963] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:43 963] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:43 963] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:43 963] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:43 964] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:43 964] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:43 965] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:43 972] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/23 11:54:43 973] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:43 973] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:43 974] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:43 974] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:43 974] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:43 974] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:43 974] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:43 974] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:43 986] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1178
+[2026/07/23 11:54:43 986] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:43 986] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:43 987] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:43 987] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:43 987] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:43 987] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:43 987] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:43 987] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:43 992] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1322
+[2026/07/23 11:54:43 992] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":6,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:43 992] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:43 993] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:43 993] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:43 993] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:43 993] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:43 993] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":6,"text_end":33,"text_percent":63,"text_seg":"好啦，导航模式已开启！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:43 994] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:44 302] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1882
+[2026/07/23 11:54:44 303] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":7,"text_end":52,"text_percent":100,"text_seg":"我准备出发啦~","text_start":33,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:44 303] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/23 11:54:44 303] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":8,"text_end":52,"text_percent":100,"text_seg":"我准备出发啦~","text_start":33,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:44 303] [P0x000016cb] [T0x00004929] D/WSConnection(line 603)         :receive data completely, dataLen=1610
+[2026/07/23 11:54:44 304] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:44 304] [P0x000016cb] [T0x00004929] D/DataSender(line 1461)          :parsed data as result, stmid=text-2, sid=cid0001982a@dx19f8d1b87339040002, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":9,"text_end":52,"text_percent":100,"text_seg":"我准备出发啦~","text_start":33,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:54:44 304] [P0x000016cb] [T0x00004929] D/DataSender(line 472)           :receive stream completed, streamId=text-2.
+[2026/07/23 11:54:44 304] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:44 304] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:44 305] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:44 305] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:44 305] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":7,"text_end":52,"text_percent":100,"text_seg":"我准备出发啦~","text_start":33,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:44 305] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:44 305] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":8,"text_end":52,"text_percent":100,"text_seg":"我准备出发啦~","text_start":33,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=2
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87339040002
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-2
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":9,"text_end":52,"text_percent":100,"text_seg":"我准备出发啦~","text_start":33,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:54:44 306] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-2 received result, reset the continued timeout count.
+[2026/07/23 11:54:47 305] [P0x000016cb] [T0x00004929] D/WSConnection(line 566)         :receive timeout, try again
+[2026/07/23 11:55:17 335] [P0x000016cb] [T0x00004929] D/WSConnection(line 537)         :connection free reaches 30s, client auto disconnected.
+[2026/07/23 11:55:17 336] [P0x000016cb] [T0x00004929] D/WSConnection(line 385)         :destroyWebSocket.
+[2026/07/23 11:55:17 336] [P0x000016cb] [T0x00004929] W/DataSender(line 1425)          :up disconnected.
+[2026/07/23 11:55:17 336] [P0x000016cb] [T0x00004929] D/WSConnection(line 598)         :receive stopped, tid=18729, sessionNo=1.
+[2026/07/23 11:55:25 203] [P0x000016cb] [T0x00001730] D/AIUIScheduler(line 1010)       :CMD_TTS
+[2026/07/23 11:55:25 204] [P0x000016cb] [T0x00001730] D/DataSender(line 520)           :set result timeout 15000ms for stream text-3, taskId=1005.
+[2026/07/23 11:55:25 204] [P0x000016cb] [T0x00001730] D/TextUploader(line 96)          :textParams={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-3","vcn":"x4_lingxiaoying_em_v2"}.
+[2026/07/23 11:55:25 204] [P0x000016cb] [T0x0000173d] W/DataSender(line 608)           :up is non-connected, try to connect right now.
+[2026/07/23 11:55:25 204] [P0x000016cb] [T0x00001733] D/DataSender(line 1664)          :try to reconnect up.
+[2026/07/23 11:55:25 208] [P0x000016cb] [T0x00006243] D/WSConnection(line 410)         :start connecting, tid=25155, sessionNo=1.
+[2026/07/23 11:55:25 209] [P0x000016cb] [T0x00006243] D/WSConnection(line 299)         :createWebSocket, host=aiui-ipv6.openspeech.cn, ip=42.62.116.27.
+[2026/07/23 11:55:25 209] [P0x000016cb] [T0x00006243] D/WSConnection(line 325)         :connecting wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, tid=25155, sessionNo=1.
+[2026/07/23 11:55:25 209] [P0x000016cb] [T0x00006243] D/WSConnection(line 333)         :websocket, GET request:
+GET /aiui/v2.1/upload.do HTTP/1.1
+Origin: https://aiui-ipv6.openspeech.cn
+Host: aiui-ipv6.openspeech.cn
+
+
+
+[2026/07/23 11:55:25 420] [P0x000016cb] [T0x00006243] D/WSConnection(line 356)         :connected to wss://aiui-ipv6.openspeech.cn/aiui/v2.1/upload.do, spent 211ms, tid=25155, sessionNo=1.
+[2026/07/23 11:55:25 420] [P0x000016cb] [T0x00006243] D/WSConnection(line 365)         :websocket, response:
+HTTP/1.1 101 Switching Protocols
+Server: openresty
+Date: Thu, 23 Jul 2026 03:55:25 GMT
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: a8Z8d4tpv88DY4126cGI98ndlKk=
+
+
+
+[2026/07/23 11:55:25 420] [P0x000016cb] [T0x00006243] D/WSConnection(line 419)         :connect success, tid=25155, sessionNo=1.
+[2026/07/23 11:55:25 420] [P0x000016cb] [T0x00006243] D/DataSender(line 1429)          :up connected, try to send packet.
+[2026/07/23 11:55:25 421] [P0x000016cb] [T0x00006243] D/WSConnection(line 473)         :start receiving, tid=25155, sessionNo=1.
+[2026/07/23 11:55:25 421] [P0x000016cb] [T0x0000173d] D/DataSender(line 698)           :send packet, ret=579, need_resend=0, send_cnt=1, sessionNo=1, info:
+streamId=text-3
+frameId=1
+sid=cid0001982a@dx19f8d1b87363040003
+dataType=0
+dataStatus=3
+dataLen=45
+args={"cnt_id":"0","dte":"","dtf":""}
+params={"appid":"e002001d","context":{"sdk_support":["tts","iat","nlp"]},"dtype":"text","scene":"IFLYTEK.tts","sn":"dc:4a:9e:35:8f:31","stmid":"text-3","vcn":"x4_lingxiaoying_em_v2"}
+userParams=bnVsbA==
+
+[2026/07/23 11:55:25 472] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=65
+[2026/07/23 11:55:25 472] [P0x000016cb] [T0x00001733] D/DataSender(line 864)           :parsed data as ack, s2ack_time=51ms, info:
+streamId=text-3
+frameId=1
+retCode=0
+
+[2026/07/23 11:55:25 612] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=1914
+[2026/07/23 11:55:25 613] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 613] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=1194
+[2026/07/23 11:55:25 613] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 613] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=1162
+[2026/07/23 11:55:25 613] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 613] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 614] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 614] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 614] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 614] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 614] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":0,"error":"","frame_id":1,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 614] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":2,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 615] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":3,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 616] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:25 616] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:25 616] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:25 640] [P0x000016cb] [T0x00006243] D/WSConnection(line 523)         :receive 1456 bytes, incomplete ws frame.
+[2026/07/23 11:55:25 640] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=1898
+[2026/07/23 11:55:25 641] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 642] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 642] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 642] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 642] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 642] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 642] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":4,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 643] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:25 650] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=1770
+[2026/07/23 11:55:25 650] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":5,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 651] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:25 660] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=1866
+[2026/07/23 11:55:25 661] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":6,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 661] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 662] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 662] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 662] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 663] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 663] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":1,"error":"","frame_id":6,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","lrst":"0","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 663] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:25 680] [P0x000016cb] [T0x00006243] D/WSConnection(line 603)         :receive data completely, dataLen=2474
+[2026/07/23 11:55:25 681] [P0x000016cb] [T0x00006243] D/DataSender(line 1461)          :parsed data as result, stmid=text-3, sid=cid0001982a@dx19f8d1b87363040003, retCode=0, params:
+{"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"speex-wb;7","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":7,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+
+[2026/07/23 11:55:25 681] [P0x000016cb] [T0x00006243] D/DataSender(line 472)           :receive stream completed, streamId=text-3.
+[2026/07/23 11:55:25 681] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 316)      :sub=tts, binary result
+[2026/07/23 11:55:25 682] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 482)      :stat size=3
+[2026/07/23 11:55:25 682] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 483)      :rstMap size=0
+[2026/07/23 11:55:25 682] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 484)      :sid=cid0001982a@dx19f8d1b87363040003
+[2026/07/23 11:55:25 683] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 485)      :streamId=text-3
+[2026/07/23 11:55:25 683] [P0x000016cb] [T0x0000173c] D/ResultScheduler(line 486)      :bizParam={"data":[{"content":[{"cancel":"0","cnt_id":"0","dte":"pcm","dtf":"audio/L16;rate=16000","dts":2,"error":"","frame_id":7,"text_end":45,"text_percent":100,"text_seg":"导航系统启动成功，定位已就绪！","text_start":0,"url":"0"}],"params":{"cmd":"[{\"service\":\"tts\",\"next\":\"end\"}]","frstid":"1","lrst":"1","rstid":1,"sub":"tts","tts":"1"}}]}
+[2026/07/23 11:55:25 683] [P0x000016cb] [T0x00001733] D/DataSender(line 1045)          :stream text-3 received result, reset the continued timeout count.
+[2026/07/23 11:55:28 681] [P0x000016cb] [T0x00006243] D/WSConnection(line 566)         :receive timeout, try again
+[2026/07/23 11:55:58 713] [P0x000016cb] [T0x00006243] D/WSConnection(line 537)         :connection free reaches 30s, client auto disconnected.
+[2026/07/23 11:55:58 713] [P0x000016cb] [T0x00006243] D/WSConnection(line 385)         :destroyWebSocket.
+[2026/07/23 11:55:58 713] [P0x000016cb] [T0x00006243] W/DataSender(line 1425)          :up disconnected.
+[2026/07/23 11:55:58 713] [P0x000016cb] [T0x00006243] D/WSConnection(line 598)         :receive stopped, tid=25155, sessionNo=1.
+[2026/07/23 13:33:39 302] [P0x000016cb] [T0x000ba506] D/NameServer(line 160)           :dns lookup hdns.openspeech.cn as [101.200.180.128].
+[2026/07/23 13:33:39 302] [P0x000016cb] [T0x000ba506] D/NameServer(line 176)           :ipv6_support=1, is_ipv6_prior=0, ip_env=MIXED, use ip 101.200.180.128.
+[2026/07/23 13:33:39 302] [P0x000016cb] [T0x000ba506] D/NameServer(line 207)           :getNameServerResult, GET request:
+GET /sip/resolver?srand=0723133302.97 HTTP/1.1
+Connection: Close
+Accept-Encoding: gzip
+Host: hdns.openspeech.cn
+X-Par: ver=1.3&appid=e002001d&operator=&nettype=&cver=6.6.0001.0047&svc=aiui&host=aiui-ipv6.openspeech.cn&sign=b508e67c1faae5d497d398afb001f6e4
+
+
+[2026/07/23 13:33:39 395] [P0x000016cb] [T0x000ba506] D/NameServer(line 221)           :getNameServerResult, spent 93ms, response:
+{"dns":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.27","port":80,"idc":"dx"},{"ip":"42.62.116.26","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}],"default":[{"host":"aiui-ipv6.openspeech.cn","sip":[{"svc":"aiui","ips":[{"ip":"42.62.116.26","port":80,"idc":"dx"}],"ttl":6000,"compel":0}]}]}
+
+[2026/07/23 13:33:39 395] [P0x000016cb] [T0x000ba506] D/NameServer(line 507)           :dns nameserver resolve aiui-ipv6.openspeech.cn as [42.62.116.27, 42.62.116.26], spent 94ms, ttl=6000.
+[2026/07/23 13:33:39 395] [P0x000016cb] [T0x000ba506] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/23 13:33:39 395] [P0x000016cb] [T0x000ba506] D/NameServer(line 548)           :Server ip list and Cache ip list is totally different, reconnect.
+[2026/07/23 13:33:39 396] [P0x000016cb] [T0x000ba506] D/NameServer(line 643)           :dns resolve aiui-ipv6.openspeech.cn as [240e:83:9001:2a::3, 240e:83:9001:2a::10, 42.62.116.26, 124.243.239.171, 124.243.239.172], spent 0ms.
+[2026/07/23 13:33:39 396] [P0x000016cb] [T0x0000173c] D/AIUISession(line 561)          :reset connection, allFailed=0.
+[2026/07/23 13:33:39 396] [P0x000016cb] [T0x0000173c] D/NameServer(line 439)           :startTask, ttl=6000.
+[2026/07/23 13:33:39 396] [P0x000016cb] [T0x000ba559] D/PushConnection(line 222)       :getChidHttps, host=aiui-ipv6.openspeech.cn, hostIP=124.243.239.171.
+[2026/07/23 13:33:39 396] [P0x000016cb] [T0x000ba559] D/PushConnection(line 251)       :getChid, POST request:
+POST /v1.1/server/register HTTP/1.1
+Host: aiui-ipv6.openspeech.cn
+Content-Type: text/json
+Connection: Close
+Content-Length: 477
+
+{"appid":"e002001d","cmd":1,"encrypt_key":"","lgi_params":{"app.name":"wheeltec_mic_ai","app.path":"/home/nvidia/wheeltec_ros2/src/wheeltec_mic_aiui/libs/arm64/","auth_id":"","cver":"6.6.0001.0047","dev_lang":"cpp","imei":"","key":"40bf94a0e12e530644b4859323fb9077","mac":"dc:4a:9e:35:8f:31","openudid":"","os_sys":"Linux","prot_type":"pb","pwd":"","sn":"dc:4a:9e:35:8f:31","unique_id":"2e5340e30c8430e24e664bea58f9e7772","usr":"","ver_type":"desktop_pc"},"uid":"d19390359246"}
+
+[2026/07/23 13:33:39 564] [P0x000016cb] [T0x000ba559] D/PushConnection(line 271)       :getChid, spent 169ms, response:
+HTTP/1.1 200 OK
+Server: openresty
+Date: Thu, 23 Jul 2026 05:33:39 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 129
+Connection: close
+
+{"ret":0,"uid":"d19390359246","chid":"cid000188d0@dx19f8d771570a110532","sid":"cau000188cf@dx19f8d77156fa110532","err":"success"}
+
+[2026/07/23 13:33:39 565] [P0x000016cb] [T0x000ba559] D/PushConnection(line 316)       :getChid, success, chid=cid000188d0@dx19f8d771570a110532.
+[2026/07/23 13:33:39 565] [P0x000016cb] [T0x000ba559] D/DataReceiver(line 307)         :push connected.
+[2026/07/23 13:33:39 565] [P0x000016cb] [T0x0000173c] I/AIUISession(line 429)          :connected to server.
+[2026/07/23 13:33:39 565] [P0x000016cb] [T0x0000173c] D/ServerConnection(line 924)     :connect to server success
+[2026/07/23 13:33:39 565] [P0x000016cb] [T0x0000173c] D/DataSender(line 897)           :clear ack error.
