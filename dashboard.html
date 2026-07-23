@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>Jetson 机器人控制台 - Debug专版</title>
+<script src="paho-mqtt.min.js"></script>
+<script src="nipplejs.min.js"></script>
+<style>
+:root{
+  --bg:#1e272e;--panel:#2c3e50;--panel2:#34495e;
+  --text:#ecf0f1;--muted:#7f8c8d;--accent:#3498db;
+  --ok:#2ecc71;--warn:#f39c12;--err:#e74c3c;--idle:#7f8c8d;
+}
+*{box-sizing:border-box}
+body{font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:16px;padding-bottom:200px;}
+h1{margin:0 0 4px;font-size:20px;color:var(--warn)}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.config{display:flex;gap:6px;align-items:center;font-size:13px}
+.config label{display:flex;flex-direction:column;gap:2px;color:var(--muted)}
+.config input{background:var(--panel2);color:var(--text);border:1px solid var(--muted);border-radius:4px;padding:4px 8px;width:130px;outline:none}
+.config input.port{width:80px}
+.config button{background:var(--accent);color:#fff;border:none;border-radius:4px;padding:6px 12px;cursor:pointer;font-weight:600;align-self:flex-end}
+.status-bar{background:var(--panel);padding:8px 14px;border-radius:6px;margin-bottom:14px;font-size:13px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.status-bar .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;background:var(--idle);vertical-align:middle}
+.status-bar .dot.ok{background:var(--ok);box-shadow:0 0 5px var(--ok)}
+.status-bar .dot.err{background:var(--err);box-shadow:0 0 5px var(--err)}
+.dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.panel{background:var(--panel);padding:14px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.panel h3{margin:0 0 10px;font-size:15px;color:var(--accent);border-bottom:1px solid var(--panel2);padding-bottom:6px}
+#video-stream,#mjpeg{width:100%;max-width:480px;aspect-ratio:4/3;background:#000;border-radius:6px;display:block}
+video,img{display:block}
+#video-stream.hidden,#mjpeg.hidden{display:none}
+.video-tabs{display:flex;gap:6px;margin-bottom:8px}
+.video-tabs button{background:var(--panel2);color:var(--text);border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+.video-tabs button.active{background:var(--accent);color:#fff;font-weight:600}
+#zone_joystick{width:200px;height:200px;background:rgba(0,0,0,.25);border-radius:50%;margin:6px auto;position:relative;touch-action:none}
+.node-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.node-card{background:var(--panel2);border:1px solid #4a627a;padding:8px 10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px;gap:6px}
+.node-card .left{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
+.node-card .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-card .dot{width:10px;height:10px;border-radius:50%;background:var(--idle);flex-shrink:0}
+.node-card .dot.running{background:var(--ok);box-shadow:0 0 5px var(--ok)}
+.node-card .dot.crashed{background:var(--err);box-shadow:0 0 5px var(--err)}
+.node-card .actions button{border:none;padding:3px 7px;border-radius:3px;cursor:pointer;font-size:11px;margin-left:3px;font-weight:700}
+.node-card .btn-start{background:var(--ok);color:#fff}
+.node-card .btn-stop{background:var(--err);color:#fff}
+.voice-box{display:flex;gap:6px;margin-top:6px}
+.voice-box input{flex:1;padding:6px;border-radius:4px;border:none;outline:none;font-size:13px}
+.voice-box button{background:var(--warn);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:700;font-size:13px}
+.llm-box{background:var(--panel2);border:1px solid #4a627a;padding:8px;border-radius:4px;min-height:48px;font-size:12px;white-space:pre-wrap}
+.battery-row{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:12px}
+.battery-shell{width:90px;height:12px;background:#555;border-radius:3px;overflow:hidden}
+.battery-fill{height:100%;background:var(--ok);transition:width .4s,background .4s}
+.battery-fill.low{background:var(--err)}
+.pose-info{font-size:12px;display:flex;gap:14px;flex-wrap:wrap;color:#bdc3c7}
+.pose-info b{color:var(--text)}
+#map-container{width:100%;max-width:480px;aspect-ratio:4/3;background:#34495e center/contain no-repeat;border-radius:6px;position:relative;overflow:hidden;border:1px solid #4a627a}
+#map-container .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-direction:column;gap:10px;text-align:center;padding:10px;}
+#robot-marker{width:14px;height:14px;background:var(--err);border:2px solid #fff;border-radius:50%;position:absolute;transform:translate(-50%,-50%);display:none;box-shadow:0 0 6px rgba(0,0,0,.6)}
+
+/* 调试面板专属样式 */
+#debug-panel{position:fixed;bottom:0;left:0;right:0;height:180px;background:rgba(15,20,25,0.95);border-top:2px solid var(--accent);z-index:9999;display:flex;flex-direction:column;}
+#debug-header{padding:4px 10px;background:var(--panel);font-size:12px;font-weight:bold;color:var(--warn);display:flex;justify-content:space-between;}
+#debug-header button{background:transparent;border:1px solid var(--warn);color:var(--warn);cursor:pointer;border-radius:3px;font-size:10px;}
+#debug-content{flex:1;overflow-y:auto;padding:8px;font-family:monospace;font-size:11px;color:#a4b0be;line-height:1.4;}
+.log-info{color:#7bed9f} .log-warn{color:#eccc68} .log-err{color:#ff4757}
+</style>
+</head>
+<body>
+<h1>Jetson 机器人控制台 <span style="font-size:12px;color:#7f8c8d;">(集成前端网络分析)</span></h1>
+
+<header>
+  <div class="config">
+    <label>小车 IP <input id="cfg-host" type="text" placeholder="192.168.x.x"/></label>
+    <label class="port">WS <input id="cfg-wsport" class="port" type="number" min="1" max="65535"/></label>
+    <label class="port">WebRTC <input id="cfg-rtcport" class="port" type="number" min="1" max="65535"/></label>
+    <label class="port">MJPEG <input id="cfg-mjpegport" class="port" type="number" min="1" max="65535"/></label>
+    <label class="port">Prefix <input id="cfg-prefix" class="port" type="text" style="width:90px"/></label>
+    <button onclick="applyConfig(true)">应用并重连</button>
+  </div>
+</header>
+
+<div class="status-bar">
+  <span><span id="dot-mqtt" class="dot"></span>MQTT: <b id="txt-mqtt">未连接</b></span>
+  <span><span id="dot-rtc" class="dot"></span>WebRTC: <b id="txt-rtc">未启动</b></span>
+  <span><span id="dot-mjpeg" class="dot"></span>MJPEG: <b id="txt-mjpeg">未启动</b></span>
+  <span>最近主题: <b id="txt-topic">--</b></span>
+</div>
+
+<div class="dashboard">
+  <div class="panel">
+    <h3>实况视觉</h3>
+    <div class="video-tabs">
+      <button id="tab-rtc" class="active" onclick="showVideo('rtc')">WebRTC</button>
+      <button id="tab-mjpeg" onclick="showVideo('mjpeg')">MJPEG</button>
+      <button id="tab-off" onclick="showVideo('off')">关闭</button>
+    </div>
+    <video id="video-stream" autoplay playsinline muted></video>
+    <img id="mjpeg" class="hidden" alt="MJPEG stream"/>
+    <h3 style="margin-top:14px">运动控制（摇杆）</h3>
+    <div id="zone_joystick"></div>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin:6px 0 0">linear 0.3 m/s · angular 1.0 rad/s 缩放</p>
+  </div>
+
+  <div class="panel">
+    <h3>系统功能栈</h3>
+    <div class="node-grid" id="node-grid"></div>
+    <div class="battery-row">
+      <span>电量</span>
+      <div class="battery-shell"><div class="battery-fill" id="battery-fill" style="width:0%"></div></div>
+      <span id="battery-text">-- V</span>
+    </div>
+    <div class="pose-info">
+      <span>X <b id="pose-x">--</b></span>
+      <span>Y <b id="pose-y">--</b></span>
+      <span>Vx <b id="pose-vx">--</b></span>
+      <span>Vz <b id="pose-vz">--</b></span>
+    </div>
+    <h3 style="margin-top:14px">大模型语音交互</h3>
+    <div class="llm-box" id="llm-response">等待语音反馈...</div>
+    <div class="voice-box">
+      <input id="voice-input" type="text" placeholder="输入文字指令后回车"/>
+      <button onclick="sendVoiceCmd()">发送</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>全局定位</h3>
+    <div id="map-container">
+      <div class="placeholder" id="map-placeholder">
+          等待 MQTT 地图数据流...
+      </div>
+      <div id="robot-marker"></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:6px 0 0">
+      状态: <span id="telemetry-info">--</span>
+    </p>
+  </div>
+</div>
+
+<!-- 调试控制台面板 -->
+<div id="debug-panel">
+  <div id="debug-header">
+    <span>>_ 前端请求网络诊断台</span>
+    <button onclick="document.getElementById('debug-content').innerHTML=''">清空日志</button>
+  </div>
+  <div id="debug-content"></div>
+</div>
+
+<script>
+"use strict";
+
+// ============================================================
+// 日志代理模块 (显示到前端控制台)
+// ============================================================
+function sysLog(msg, type="info") {
+    const box = document.getElementById("debug-content");
+    const t = new Date().toLocaleTimeString();
+    const cls = type === "error" ? "log-err" : type === "warn" ? "log-warn" : "log-info";
+    box.innerHTML += `<div class="${cls}">[${t}] [${type.toUpperCase()}] ${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+// ============================================================
+// 配置：URL 参数 > localStorage > 默认
+// ============================================================
+const DEFAULTS = {
+  host:       "192.168.31.42",
+  wsPort:     9001,
+  rtcPort:    8082,
+  mjpegPort:  8080,
+  prefix:     "robot_0",
+  mqttPath:   "/mqtt",   // mosquitto WS listener 默认路径
+};
+const SYSTEM_NODES = [
+  // startable=false:开机自启,不可手动启停(后端 /status/all 第一次到达会被覆盖)
+  {id:"base",name:"底盘驱动",startable:false},
+  {id:"camera",name:"摄像头",startable:false},
+  {id:"mic",name:"麦克风阵列",startable:false},
+  {id:"webrtc",name:"WebRTC推流",startable:false},
+  {id:"web_console",name:"Web控制台",startable:false},
+  {id:"largemodel",name:"大模型AI",startable:false},
+  // startable=true:可由用户触发(走 voice pipeline)
+  {id:"slam",name:"SLAM建图",startable:true},
+  {id:"nav2",name:"自主导航",startable:true},
+  {id:"kcf",name:"KCF视觉跟随",startable:true},
+  {id:"path_follow",name:"路径跟随",startable:true},
+  {id:"align",name:"回充对接",startable:true},
+];
+
+const cfg = { ...DEFAULTS };
+let mqttClient = null;
+let reconnectAttempt = 0;
+let reconnectTimer = null;
+let pc = null;
+let lastJoystickSend = 0;
+const JOY_HZ = 20;
+
+const $ = (sel) => document.querySelector(sel);
+const setDot = (id, kind) => { $(id).className = "dot " + (kind === "ok" ? "ok" : kind === "err" ? "err" : ""); };
+
+function loadConfig() {
+  const qs = new URLSearchParams(location.search);
+  if (qs.get("host"))      cfg.host      = qs.get("host");
+  if (qs.get("wsPort"))    cfg.wsPort    = parseInt(qs.get("wsPort"),    10) || DEFAULTS.wsPort;
+  if (qs.get("rtcPort"))   cfg.rtcPort   = parseInt(qs.get("rtcPort"),   10) || DEFAULTS.rtcPort;
+  if (qs.get("mjpegPort")) cfg.mjpegPort = parseInt(qs.get("mjpegPort"), 10) || DEFAULTS.mjpegPort;
+  if (qs.get("prefix"))    cfg.prefix    = qs.get("prefix") || DEFAULTS.prefix;
+  try {
+    const saved = JSON.parse(localStorage.getItem("jetson_console_cfg") || "{}");
+    Object.assign(cfg, saved);
+  } catch {}
+}
+function saveConfig() {
+  try { localStorage.setItem("jetson_console_cfg", JSON.stringify(cfg)); } catch {}
+}
+function applyConfig(reconnect) {
+  cfg.host       = ($("#cfg-host").value      || cfg.host).trim();
+  cfg.wsPort     = parseInt($("#cfg-wsport").value,    10) || cfg.wsPort;
+  cfg.rtcPort    = parseInt($("#cfg-rtcport").value,   10) || cfg.rtcPort;
+  cfg.mjpegPort  = parseInt($("#cfg-mjpegport").value, 10) || cfg.mjpegPort;
+  cfg.prefix     = ($("#cfg-prefix").value || cfg.prefix).trim();
+  syncConfigUI();
+  saveConfig();
+  sysLog(`参数应用: IP=${cfg.host}, WS=${cfg.wsPort}, RTC=${cfg.rtcPort}`, "info");
+  initMap();
+  if (reconnect) {
+    disconnectMQTT();
+    connectMQTT();
+  }
+}
+function syncConfigUI() {
+  $("#cfg-host").value      = cfg.host;
+  $("#cfg-wsport").value    = cfg.wsPort;
+  $("#cfg-rtcport").value   = cfg.rtcPort;
+  $("#cfg-mjpegport").value = cfg.mjpegPort;
+  $("#cfg-prefix").value    = cfg.prefix;
+}
+
+// ============================================================
+// MQTT
+// ============================================================
+function connectMQTT() {
+  if (typeof Paho === "undefined" || !Paho.Client) {
+    setMqttStatus("Paho 未加载", "err");
+    sysLog("严重错误：paho-mqtt.min.js 未成功加载", "error");
+    return;
+  }
+  if (mqttClient && mqttClient.isConnected()) return;
+  try {
+    const cid = "web_" + Math.random().toString(16).slice(2, 10);
+    const wsUrl = `ws://${cfg.host}:${cfg.wsPort}${cfg.mqttPath}`;
+    sysLog(`[MQTT] 尝试通过 WebSocket 连接至: ${wsUrl}`, "info");
+    
+    const ClientCtor = (Paho.MQTT && Paho.MQTT.Client) || Paho.Client;
+    mqttClient = new ClientCtor(cfg.host, cfg.wsPort, cfg.mqttPath, cid);
+    mqttClient.onConnectionLost = onConnLost;
+    mqttClient.onMessageArrived = onMsg;
+    mqttClient.connect({
+      timeout: 8,
+      keepAliveInterval: 30,
+      cleanSession: true,
+      useSSL: location.protocol === "https:",
+      onSuccess: () => {
+        reconnectAttempt = 0;
+        setMqttStatus(`已连接 ${cfg.host}:${cfg.wsPort}`, "ok");
+        sysLog(`[MQTT] 连接成功！已桥接至 ROS2`, "info");
+        mqttClient.subscribe(cfg.prefix + "/status/all");
+        mqttClient.subscribe(cfg.prefix + "/voice/response");
+        
+        // 【新增代码：订阅地图数据流】
+        mqttClient.subscribe(cfg.prefix + "/map_data");
+      },
+      onFailure: (e) => {
+        const msg = e.errorMessage || e.exceptionMessage || JSON.stringify(e);
+        setMqttStatus(`连接失败`, "err");
+        sysLog(`[MQTT] 连接失败 (通常是后台没启动或端口不通): ${msg}`, "error");
+        scheduleReconnect();
+      },
+    });
+    setMqttStatus("连接中…", "idle");
+  } catch (e) {
+    sysLog(`[MQTT] 初始化异常: ${e.message}`, "error");
+    scheduleReconnect();
+  }
+}
+function disconnectMQTT() {
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  if (mqttClient) {
+    try { mqttClient.disconnect(); } catch {}
+    mqttClient = null;
+  }
+}
+function onConnLost(resp) {
+  setMqttStatus(`断开`, "err");
+  sysLog(`[MQTT] 连接断开: ${resp.errorMessage || "未知原因"}`, "warn");
+  scheduleReconnect();
+}
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectAttempt++;
+  const delay = Math.min(30000, 1000 * Math.pow(1.6, Math.min(reconnectAttempt, 8)));
+  setMqttStatus(`重连中 (${reconnectAttempt}) …`, "err");
+  reconnectTimer = setTimeout(() => { reconnectTimer = null; connectMQTT(); }, delay);
+}
+function setMqttStatus(txt, kind) {
+  $("#txt-mqtt").textContent = txt;
+  setDot("#dot-mqtt", kind);
+}
+
+// ============================================================
+// 消息处理回调
+// ============================================================
+function onMsg(msg) {
+  const t = msg.destinationName;
+  $("#txt-topic").textContent = t;
+  let p;
+  try { p = JSON.parse(msg.payloadString); } catch { return; }
+  
+  if (t === cfg.prefix + "/status/all") {
+    if (p.features)  updateFeatures(p.features);
+    if (p.robot)     updateRobot(p.robot);
+    if (p.llm_feedback) $("#llm-response").textContent = p.llm_feedback;
+  } else if (t === cfg.prefix + "/voice/response") {
+    $("#llm-response").textContent = p.text || "(empty)";
+  } 
+  // 【新增代码：处理后端发来的 Base64 地图数据】
+  else if (t === cfg.prefix + "/map_data") {
+    const c = $("#map-container");
+    const placeholder = $("#map-placeholder");
+    if (placeholder) placeholder.style.display = "none";
+    
+    // 直接渲染 Base64 图像流作为背景
+    c.style.backgroundImage = `url("data:image/png;base64,${p.image}")`;
+    sysLog(`[MQTT] 收到实时地图更新，尺寸: ${p.width}x${p.height}`, "info");
+  }
+}
+
+function publishJson(suffix, obj) {
+  if (!mqttClient || !mqttClient.isConnected()) return false;
+  const MessageCtor = (Paho.MQTT && Paho.MQTT.Message) || Paho.Message;
+  const m = new MessageCtor(JSON.stringify(obj));
+  m.destinationName = cfg.prefix + "/" + suffix;
+  m.qos = 0;
+  mqttClient.send(m);
+  return true;
+}
+
+// ============================================================
+// 功能卡片
+// ============================================================
+function renderNodePanel() {
+  const g = $("#node-grid");
+  g.innerHTML = "";
+  SYSTEM_NODES.forEach((n) => {
+    const d = document.createElement("div");
+    d.className = "node-card";
+    d.innerHTML = `
+      <div class="left"><span class="dot" data-dot="${n.id}"></span><span class="name" title="${n.name}">${n.name}</span></div>
+      <div class="actions">
+        <button class="btn-start" data-action="start" data-target="${n.id}">▶</button>
+        <button class="btn-stop"  data-action="stop"  data-target="${n.id}">■</button>
+      </div>`;
+    g.appendChild(d);
+  });
+  g.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-action]");
+    if (!btn) return;
+    sysLog(`[控制指令] 请求 ${btn.dataset.action} -> ${btn.dataset.target}`, "info");
+    sendSysCmd(btn.dataset.action, btn.dataset.target);
+  });
+}
+function updateFeatures(f) {
+  if (!f) return;
+  SYSTEM_NODES.forEach((n) => {
+    const dot = document.querySelector(`[data-dot="${n.id}"]`);
+    if (!dot) return;
+    const s = f[n.id];
+    dot.className = "dot";
+    if (s && s.status === "running")      dot.classList.add("running");
+    else if (s && s.status === "crashed") dot.classList.add("crashed");
+  });
+}
+// ============================================================================
+//  功能控制(前端按钮 = 本地语音,统一塞 voice pipeline)
+//  后端: MQTT /cmd/voice → system_manager → voice_words → LLM → action_service
+//  前端: 用户点"开启"按钮 = 用户对 mic 说"开启X",效果完全相同
+// ============================================================================
+const FEATURE_VOICE = {
+  // target  →  开启文案 / 结束文案
+  slam:       { on: "\u5f00\u542f\u5efa\u56fe",           off: "\u7ed3\u675f\u5efa\u56fe" },
+  nav2:       { on: "\u5f00\u542f\u5bfc\u822a",           off: "\u7ed3\u675f\u5bfc\u822a" },
+  kcf:        { on: "\u5f00\u59cb KCF \u89c6\u89c9\u8ddf\u968f",  off: "\u7ed3\u675f KCF \u89c6\u89c9\u8ddf\u968f" },
+  path_follow:{ on: "\u5f00\u59cb\u8def\u5f84\u8ddf\u968f",       off: "\u7ed3\u675f\u8def\u5f84\u8ddf\u968f" },
+  align:      { on: "\u53bb\u5145\u7535",             off: "\u7ed3\u675f\u5145\u7535" },
+};
+
+function sendFeatureCmd(target, action /* "start" | "stop" */) {
+  const voice = (FEATURE_VOICE[target] || {})[action === "stop" ? "off" : "on"];
+  if (!voice) {
+    $("#llm-response").textContent = "\u672a\u77e5\u529f\u80fd: " + target;
+    return;
+  }
+  if (publishJson("cmd/voice", { text: voice })) {
+    $("#llm-response").textContent = "[\u524d\u7aef\u6309\u94ae->\u8bed\u97f3] \u5df2\u8bf7\u6c42: " + voice;
+    sysLog("[\u524d\u7aef] \u6309\u94ae -> voice: \"" + voice + "\"", "info");
+  } else {
+    $("#llm-response").textContent = "MQTT \u672a\u8fde\u63a5,\u65e0\u6cd5\u53d1\u9001";
+  }
+}
+// 旧 sendSysCmd 名字保留,做兼容重定向
+function sendSysCmd(action, target) {
+  sendFeatureCmd(target, action);
+}
+
+// ============================================================
+// 机器人状态 / 电池 / 地图标记
+// ============================================================
+function updateRobot(r) {
+  if (!r) return;
+  if (r.position) {
+    $("#pose-x").textContent = r.position.x?.toFixed(2) ?? "--";
+    $("#pose-y").textContent = r.position.y?.toFixed(2) ?? "--";
+    updateMarker(r.position.x, r.position.y);
+  }
+  if (r.velocity) {
+    $("#pose-vx").textContent = r.velocity.linear?.toFixed(2) ?? "--";
+    $("#pose-vz").textContent = r.velocity.angular?.toFixed(2) ?? "--";
+  }
+  if (r.battery !== undefined) {
+    const v = r.battery;
+    $("#battery-text").textContent = v.toFixed(1) + " V";
+    const pct = Math.min(100, Math.max(0, (v - 10.5) / 2.5 * 100));
+    const fill = $("#battery-fill");
+    fill.style.width = pct.toFixed(0) + "%";
+    fill.classList.toggle("low", pct <= 30);
+  }
+  $("#telemetry-info").textContent =
+    `online=${r.online?"true":"false"} · charging=${r.charging?"true":"false"}`;
+}
+function updateMarker(x, y) {
+  const m = $("#robot-marker");
+  m.style.display = "block";
+  m.style.left = (50 + x * 1.5) + "%";
+  m.style.top  = (50 - y * 1.5) + "%";
+}
+
+// ============================================================
+// 地图探测 (已修改为纯数据模式)
+// ============================================================
+function initMap() {
+  // 【修改代码：完全摒弃 HTTP 轮询图片的逻辑，仅作状态提示】
+  const placeholder = $("#map-placeholder");
+  if (placeholder) {
+      placeholder.innerHTML = `等待 MQTT 地图数据流...`;
+  }
+  sysLog(`[地图模块] 切换为纯数据流模式，等待接收 /map_data`, "info");
+}
+
+// ============================================================
+// 摇杆
+// ============================================================
+function initJoystick() {
+  const z = $("#zone_joystick");
+  if (!z || typeof nipplejs === "undefined") return;
+  const j = nipplejs.create({
+    zone: z, mode: "static",
+    position: { left: "50%", top: "50%" },
+    color: "#3498db",
+  });
+  j.on("move", (_evt, data) => {
+    const now = performance.now();
+    if (now - lastJoystickSend < 1000 / JOY_HZ) return;
+    lastJoystickSend = now;
+    const r = data.angle.radian;
+    const f = Math.min(1, data.distance / 50);
+    publishJson("cmd_vel", {
+      linear_x:  Math.sin(r) * 0.3 * f,
+      angular_z: -Math.cos(r) * 1.0 * f,
+    });
+  });
+  j.on("end", () => publishJson("cmd_vel", { linear_x: 0, angular_z: 0 }));
+}
+
+function sendVoiceCmd() {
+  const i = $("#voice-input");
+  const t = i.value.trim();
+  if (!t) return;
+  if (publishJson("voice_input", { text: t })) {
+    $("#llm-response").textContent = "思考中…";
+  } else {
+    $("#llm-response").textContent = "MQTT 未连接，无法发送";
+  }
+  i.value = "";
+}
+
+// ============================================================
+// WebRTC
+// ============================================================
+async function startWebRTC() {
+  if (typeof RTCPeerConnection === "undefined") {
+    setRtcStatus("浏览器不支持 WebRTC", "err"); return;
+  }
+  if (pc) { setRtcStatus("已在运行", "ok"); return; }
+  setRtcStatus("协商中…", "idle");
+  sysLog(`[WebRTC] 初始化请求... 目标信令地址 http://${cfg.host}:${cfg.rtcPort}/offer`, "info");
+  
+  try {
+    pc = new RTCPeerConnection();
+    pc.addTransceiver("video", { direction: "recvonly" });
+    
+    pc.ontrack = (ev) => { 
+      sysLog(`[WebRTC] 前端接收到新轨道数据流 (kind: ${ev.track.kind})`, "info");
+      const videoEl = $("#video-stream");
+      
+      if (!videoEl.srcObject) {
+        if (ev.streams && ev.streams.length > 0) {
+          videoEl.srcObject = ev.streams[0];
+        } else {
+          videoEl.srcObject = new MediaStream([ev.track]);
+        }
+      } else {
+        videoEl.srcObject.addTrack(ev.track);
+      }
+      
+      if (videoEl.paused) {
+          videoEl.play().then(() => {
+              sysLog("[WebRTC] 视频已成功渲染播放", "info");
+          }).catch(e => {
+              sysLog(`[WebRTC] 唤醒视频失败 (已被浏览器拦截或中断): ${e.message}`, "error");
+              setRtcStatus("点击画面播放", "warn");
+          });
+      }
+    };
+    
+    pc.onconnectionstatechange = () => {
+      const s = pc.connectionState;
+      sysLog(`[WebRTC] 底层连接状态变更: ${s}`, "warn");
+      if (s === "failed" || s === "closed" || s === "disconnected") {
+        setRtcStatus(`连接 ${s}`, "err");
+        if (s === "failed" || s === "closed") { pc = null; }
+      } else if (s === "connected") {
+        setRtcStatus("已连接", "ok");
+      }
+    };
+    
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    
+    sysLog(`[WebRTC] 正在发送 SDP Offer (这通常代表在请求视频流)`, "info");
+    const resp = await fetch(`http://${cfg.host}:${cfg.rtcPort}/offer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type }),
+    });
+    
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(`HTTP ${resp.status}: ${err.error || "信令服务拒绝访问"}`);
+    }
+    const answer = await resp.json();
+    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    sysLog(`[WebRTC] 成功接收 SDP Answer，建立加密传输管道`, "info");
+    
+  } catch (e) {
+    sysLog(`[WebRTC] 启动遭遇灾难性错误: ${e.message}`, "error");
+    setRtcStatus("失败: 详情看下方日志", "err");
+    if (pc) { try { pc.close(); } catch {} pc = null; }
+  }
+}
+
+function stopWebRTC() {
+  if (pc) { try { pc.close(); } catch {} pc = null; }
+  $("#video-stream").srcObject = null;
+  setRtcStatus("已停止", "idle");
+  sysLog("[WebRTC] 连接已手动关闭", "info");
+}
+function setRtcStatus(t, k) {
+  $("#txt-rtc").textContent = t;
+  setDot("#dot-rtc", k);
+}
+
+// ============================================================
+// MJPEG（web_video_server 8080）
+// ============================================================
+function startMJPEG() {
+  const img = $("#mjpeg");
+  const topics = [
+    "/camera/color/image_raw",
+    "/camera/image_raw",
+    "/usb_cam/image_raw",
+  ];
+  let i = 0;
+  const tryNext = () => {
+    if (i >= topics.length) {
+      setMjpegStatus("获取失败", "err");
+      sysLog(`[MJPEG] 所有候补 Topic 均拉取失败，请检查 8080 服务`, "error");
+      return;
+    }
+    const t = topics[i++];
+    const url = `http://${cfg.host}:${cfg.mjpegPort}/stream?topic=${encodeURIComponent(t)}&type=mjpeg&_=${Date.now()}`;
+    sysLog(`[MJPEG] 尝试获取备用图传流: ${t}`, "info");
+    img.src = url;
+  };
+  img.onload  = () => {
+      setMjpegStatus(`已连接`, "ok");
+      sysLog(`[MJPEG] 获取流成功: ${topics[i-1]}`, "info");
+  };
+  img.onerror = tryNext;
+  tryNext();
+}
+function stopMJPEG() {
+  $("#mjpeg").removeAttribute("src");
+  setMjpegStatus("未启动", "idle");
+}
+function setMjpegStatus(t, k) {
+  $("#txt-mjpeg").textContent = t;
+  setDot("#dot-mjpeg", k);
+}
+
+function showVideo(which) {
+  ["rtc","mjpeg","off"].forEach(w => { $(`#tab-${w}`).classList.toggle("active", which === w); });
+  const v = $("#video-stream"), m = $("#mjpeg");
+  v.classList.add("hidden");
+  m.classList.add("hidden");
+  stopWebRTC(); stopMJPEG();
+  sysLog(`[视频控制] 切换视频源为: ${which.toUpperCase()}`, "info");
+  if (which === "rtc")         { v.classList.remove("hidden"); startWebRTC(); }
+  else if (which === "mjpeg")  { m.classList.remove("hidden"); startMJPEG(); }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  loadConfig();
+  syncConfigUI();
+  sysLog("前端系统初始化完毕，开始加载各项组件...", "info");
+  renderNodePanel();
+  initMap();
+  initJoystick();
+  connectMQTT();
+  showVideo("rtc");
+  $("#voice-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendVoiceCmd(); });
+});
+</script>
+</body>
+</html>

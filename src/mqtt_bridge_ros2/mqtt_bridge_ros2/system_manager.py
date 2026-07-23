@@ -29,110 +29,150 @@ import threading
 #  功能注册表 — 所有可管理的功能单元
 # ════════════════════════════════════════════
 FEATURE_REGISTRY = {
-    # ── 基础功能 ──
+    # ── 基础功能(自动启动,不可启停) ──
     "base": {
         "name": "底盘驱动",
-        "start": ["ros2", "launch", "turn_on_wheeltec_robot", "base_serial.launch.py"],
+        "voice_start": None,  # 开机自启,不可启停
+        "voice_stop":  None,
         "description": "STM32 串口通信与底盘驱动",
         "category": "base",
         "auto_start": True,
+        "startable": False,
     },
-    # ── 摄像头 ──
     "camera": {
         "name": "摄像头",
-        "start": ["ros2", "launch", "turn_on_wheeltec_robot", "wheeltec_camera.launch.py"],
+        "voice_start": None, "voice_stop": None,
         "description": "RGB 相机驱动",
         "category": "sensor",
+        "auto_start": True,
+        "startable": False,
     },
-    # ── 麦克风阵列 ──
     "mic": {
         "name": "麦克风阵列",
-        "start": ["ros2", "run", "wheeltec_mic_aiui", "wheeltec_mic"],
+        "voice_start": None, "voice_stop": None,
         "description": "语音采集",
         "category": "sensor",
+        "auto_start": True,
+        "startable": False,
     },
-    # ── SLAM 建图 ──
-    "slam": {
-        "name": "SLAM 建图",
-        "start": ["ros2", "launch", "largemodel", "largemodel_slam.launch.py"],
-        "description": "同步定位与地图构建",
-        "category": "perception",
-    },
-    # ── 自主导航 ──
-    "nav2": {
-        "name": "自主导航",
-        "start": ["ros2", "launch", "wheeltec_robot_nav2", "wheeltec_nav2.launch.py"],
-        "description": "Nav2 路径规划与导航",
-        "category": "navigation",
-        "depends": ["slam"],
-    },
-    # ── KCF 视觉跟随 ──
-    "kcf": {
-        "name": "KCF 视觉跟随",
-        "start": ["ros2", "launch", "wheeltec_robot_kcf", "wheeltec_robot_kcf.launch.py"],
-        "description": "KCF 目标跟踪与跟随",
-        "category": "follow",
-    },
-    # ── 激光跟随 ──
-    "laser_follower": {
-        "name": "激光跟随",
-        "start": ["ros2", "run", "simple_follower_ros2", "lasertracker"],
-        "description": "激光雷达人物跟随",
-        "category": "follow",
-    },
-    # ── 路径跟随 ──
-    "path_follow": {
-        "name": "路径跟随",
-        "start": ["ros2", "launch", "wheeltec_path_follow", "...launch.py"],
-        "description": "沿预设路径行驶",
-        "category": "navigation",
-    },
-    # ── 大模型 ──
-    "largemodel": {
-        "name": "大模型 AI",
-        "start": ["ros2", "launch", "largemodel", "largemodel_control.launch.py"],
-        "description": "语音交互+大模型任务执行",
-        "category": "ai",
-    },
-    # ── 自动回充 ──
-    "align": {
-        "name": "回充对接",
-        "start": [],  # 由 action_service 触发
-        "description": "视觉引导充电桩自动对接",
-        "category": "utility",
-    },
-    # ── WebRTC 推流 ──
     "webrtc": {
         "name": "视频推流",
-        "start": ["ros2", "run", "mqtt_bridge_ros2", "webrtc_pusher"],
+        "voice_start": None, "voice_stop": None,
         "description": "WebRTC 摄像头视频流",
         "category": "sensor",
+        "auto_start": True,  # mqtt_bridge_ros2 自启
+        "startable": False,
     },
-    # ── Web Console ──
     "web_console": {
         "name": "Web 控制台",
-        "start": ["ros2", "launch", "mqtt_bridge_ros2", "web_console.launch.py"],
+        "voice_start": None, "voice_stop": None,
         "description": "rosbridge + Web 可视化",
         "category": "utility",
+        "auto_start": True,
+        "startable": False,
+    },
+    "largemodel": {
+        "name": "大模型 AI",
+        "voice_start": None, "voice_stop": None,
+        "description": "语音交互+大模型任务执行",
+        "category": "ai",
+        "auto_start": True,
+        "startable": False,
+    },
+    # ── 语音可启停的功能(统一走 LLM → action_service) ──
+    "slam": {
+        "name": "SLAM 建图",
+        "voice_start": "开启建图",
+        "voice_stop":  "结束建图",
+        "description": "同步定位与地图构建(RTAB-Map)",
+        "category": "perception",
+        "auto_start": False,
+        "startable": True,
+    },
+    "nav2": {
+        "name": "自主导航",
+        "voice_start": "开启导航",
+        "voice_stop":  "结束导航",
+        "description": "Nav2 路径规划与导航",
+        "category": "navigation",
+        "auto_start": False,
+        "startable": True,
+        "depends": ["slam"],
+    },
+    "kcf": {
+        "name": "KCF 视觉跟随",
+        "voice_start": "开始 KCF 视觉跟随",
+        "voice_stop":  "结束 KCF 视觉跟随",
+        "description": "KCF 目标跟踪与跟随",
+        "category": "follow",
+        "auto_start": False,
+        "startable": True,
+    },
+    "path_follow": {
+        "name": "路径跟随",
+        "voice_start": "开始路径跟随",
+        "voice_stop":  "结束路径跟随",
+        "description": "沿预设路径行驶",
+        "category": "navigation",
+        "auto_start": False,
+        "startable": True,
+    },
+    "align": {
+        "name": "回充对接",
+        "voice_start": "去充电",
+        "voice_stop":  "结束充电",
+        "description": "视觉引导充电桩自动对接(由 LLM/auto_charge 触发)",
+        "category": "utility",
+        "auto_start": False,
+        "startable": True,
     },
 }
 
 
 ROS_NODE_TO_FEATURE = {
-    "/base_serial":           "base",
+    # ── 底盘(注意:真节点名是 /wheeltec_robot,不是 /base_serial) ──
+    "/wheeltec_robot":        "base",
+    "/ekf_filter_node":       "base",   # robot_localization
+    "/base_to_camera_tf":     "base",
+    "/base_to_laser_tf":      "base",
+    "/base_to_gyro":          "base",
+    "/base_to_link":          "base",
+    "/lslidar_driver_node":   "base",   # 雷达也算"基础"类
+    # ── 摄像头 ──
     "/camera/camera":         "camera",
+    "/realsense2_camera_node":"camera",
+    # ── 麦克风 ──
     "/wheeltec_mic":          "mic",
     "/wheeltec_mic_aiui":     "mic",
     "/aiui_node":             "mic",
+    # ── SLAM 建图 ──
+    # /rtabmap 在 SLAM 和 Nav2 两种模式都跑,需要在 _poll_ros_nodes 里消歧
     "/rtabmap":               "slam",
     "/slam_toolbox":          "slam",
-    "/lasertracker":          "laser_follower",
+    "/rgbd_sync":             "slam",
+    # ── 自主导航(nav2_bringup 一堆节点) ──
+    "/nav2_container":        "nav2",
+    "/planner_server":        "nav2",
+    "/controller_server":     "nav2",
+    "/bt_navigator":          "nav2",
+    "/smoother_server":       "nav2",
+    "/velocity_smoother":     "nav2",
+    "/behavior_server":       "nav2",
+    "/global_costmap/global_costmap":   "nav2",
+    "/local_costmap/local_costmap":     "nav2",
+    "/lifecycle_manager_navigation":   "nav2",
+    # ── KCF 视觉跟随 ──
     "/kcf_tracker_node":      "kcf",
+    # ── 大模型 ──
     "/model_service":         "largemodel",
     "/action_service":        "largemodel",
+    # ── Web 控制台 ──
     "/web_video_server":      "web_console",
     "/rosbridge_websocket":   "web_console",
+    "/rosapi":                "web_console",
+    # ── WebRTC 推流 ──
     "/webrtc_camera_node":    "webrtc",
+    "/system_manager":        "mqtt_bridge",  # 自己也算
 }
 
 
@@ -158,6 +198,8 @@ class SystemManager(Node):
         # ═══ 进程管理 ═══
         self.processes: dict[str, subprocess.Popen] = {}
         self.process_status: dict[str, str] = {}  # idle | running | crashed
+        # 重要:不预先标任何功能为 running
+        # 一切以 ROS 节点列表的实际探测为准 — 前端标绿只能来自 _poll_ros_nodes
         self._init_feature_status()
 
         # ═══ MQTT ═══
@@ -209,8 +251,10 @@ class SystemManager(Node):
         # ═══ 状态定时器 ═══
         self._status_timer = self.create_timer(self.status_interval, self._report_status)
         self._proc_watchdog = self.create_timer(5.0, self._watchdog_check)
-        # ROS 节点轮询（5s）把实际在跑的节点映射到 features
+        # ROS 节点轮询(5s)把实际在跑的节点映射到 features
         self._ros_poll_timer = self.create_timer(5.0, self._poll_ros_nodes)
+        # 启动后立即跑一次(不等 5s),让前端一连上 MQTT 就能看到准确状态
+        self._initial_poll_done = False
 
         self.get_logger().info(
             f"SystemManager started — prefix={self.prefix}, "
@@ -235,7 +279,7 @@ class SystemManager(Node):
         if rc == 0:
             self._mqtt_connected = True
             self.get_logger().info("MQTT connected")
-            # 订阅主题
+            # 订阅主题列表
             topics = [
                 (f"{self.prefix}/cmd_vel", 0),
                 (f"{self.prefix}/goal_pose", 0),
@@ -244,9 +288,14 @@ class SystemManager(Node):
                 (f"{self.prefix}/voice_input", 0),
                 (f"{self.prefix}/debug_cmd", 0),
                 (f"{self.prefix}/webrtc_answer", 0),
+                
+                # 👇 【新增以下两行】 👇
+                (f"{self.prefix}/cmd/map_update", 0),    # 未来的正确路径 (robot_0/cmd/map_update)
+                ("robot/robot001/cmd/map_update", 0),    # 您当前的强行测试路径
+                (f"{self.prefix}/cmd/voice", 0),          # 前端按钮 = 本地语音,统一进 voice pipeline
             ]
             self.mqtt.subscribe(topics)
-            self.get_logger().info(f"Subscribed to {len(topics)} topics under {self.prefix}")
+            self.get_logger().info(f"Subscribed to {len(topics)} topics under {self.prefix} (and test topics)")
         else:
             self._mqtt_connected = False
             self.get_logger().error(f"MQTT rc={rc}")
@@ -289,7 +338,7 @@ class SystemManager(Node):
                 pose.pose.covariance[7] = 0.25
                 pose.pose.covariance[35] = 0.0685
                 self._initpose_pub.publish(pose)
-                self.get_logger().info(f"Set initial pose: ({data.get(x)}, {data.get(y)})")
+                self.get_logger().info(f"Set initial pose: ({data.get('x')}, {data.get('y')})")
 
             # ── 功能启停（增强版 sys_cmd）──
             elif topic == f"{self.prefix}/sys_cmd":
@@ -306,11 +355,22 @@ class SystemManager(Node):
                     self._voice_pub.publish(msg_out)
                     self.get_logger().info(f"Voice input → LLM: {text[:60]}")
 
-            # ── 调试指令 ──
+            # 👇 前端按钮 = 本地语音:统一塞进 voice_words,LLM 解析后调 action_service
+            elif topic == f"{self.prefix}/cmd/voice":
+                text = data.get("text", data.get("_raw", ""))
+                if text:
+                    self._voice_pub.publish(String(data=text))
+                    self.get_logger().info(f"cmd/voice → LLM: {text[:60]}")
+                    self._mqtt_pub("/status/info", {"msg": f"语音指令已转发: {text[:60]}"})
+
             elif topic == f"{self.prefix}/debug_cmd":
                 cmd = data.get("cmd", data.get("_raw", ""))
                 if cmd:
                     self._debug_pub.publish(String(data=cmd))
+
+            # 👇 【新增以下分支：只要匹配测试路径或正式路径，都去执行地图更新】👇
+            elif topic in [f"{self.prefix}/cmd/map_update", "robot/robot001/cmd/map_update"]:
+                self._handle_map_update(data)
 
         except json.JSONDecodeError:
             self.get_logger().warn(f"Non-JSON on {topic}: {msg.payload[:80]}")
@@ -318,88 +378,82 @@ class SystemManager(Node):
             self.get_logger().error(f"Handle {topic}: {e}")
 
     # ────────────────────────────────────────
-    #  功能启停核心逻辑
+    #  功能启停核心逻辑 — 全部走 voice pipeline
+    #  统一:前端按钮 / 旧 /sys_cmd → voice_words → LLM → action_service
     # ────────────────────────────────────────
     def _handle_feature_cmd(self, action: str, target: str, params: dict):
         if target not in FEATURE_REGISTRY:
-            self._mqtt_pub(f"/status/error", {"error": f"Unknown feature: {target}"})
+            self._mqtt_pub("/status/error", {"error": f"Unknown feature: {target}"})
             return
 
         feat = FEATURE_REGISTRY[target]
+        if not feat.get("startable", False):
+            self.get_logger().warning(f"{target} 不能由 MQTT 启停(开机自启或由 LLM 触发)")
+            self._mqtt_pub("/status/error", {"error": f"{target} 不可启停,开机即在跑或由 LLM 触发"})
+            return
 
         if action == "start":
-            if self.process_status.get(target) == "running":
-                self.get_logger().warning(f"{target} already running")
-                return
-            if not feat.get("start"):
-                self.get_logger().warning(f"{target} has no start command")
-                return
-
-            cmd = feat["start"]
-            # 替换参数模板
-            resolved = [c.format(**params) for c in cmd]
-
-            self.get_logger().info("Starting " + target + ": " + " ".join(resolved))
-            try:
-                log_dir = os.path.expanduser("~/.ros/mqtt_logs")
-                os.makedirs(log_dir, exist_ok=True)
-                logfile = open(os.path.join(log_dir, f"{target}.log"), "w")
-                proc = subprocess.Popen(
-                    resolved, stdout=logfile, stderr=subprocess.STDOUT,
-                    preexec_fn=lambda: os.setsid() if hasattr(os, "setsid") else None,
-                )
-                self.processes[target] = proc
-                self.process_status[target] = "running"
-                self.get_logger().info(f"{target} started (PID {proc.pid})")
-            except Exception as e:
-                self.get_logger().error(f"Start {target} failed: {e}")
-                self.process_status[target] = "crashed"
-
+            text = feat.get("voice_start")
         elif action == "stop":
-            if target not in self.processes:
-                self.get_logger().warning(f"{target} not running")
-                return
-            proc = self.processes[target]
-            try:
-                if proc.poll() is None:
-                    # Kill the entire process group
-                    if hasattr(os, "killpg") and hasattr(proc, "pid"):
-                        pgid = os.getpgid(proc.pid)
-                        os.killpg(pgid, signal.SIGTERM)
-                    else:
-                        proc.terminate()
-                    try:
-                        proc.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        proc.kill()
-                        proc.wait(timeout=3)
-                del self.processes[target]
-                self.process_status[target] = "idle"
-                self.get_logger().info(f"{target} stopped")
-            except Exception as e:
-                self.get_logger().error(f"Stop {target} failed: {e}")
-
+            text = feat.get("voice_stop")
         elif action == "restart":
-            self._handle_feature_cmd("stop", target, params)
-            time.sleep(1)
-            self._handle_feature_cmd("start", target, params)
-
+            # 先停后起:连发两条语音
+            for t in (feat.get("voice_stop"), feat.get("voice_start")):
+                if t:
+                    self._voice_pub.publish(String(data=t))
+                    time.sleep(0.5)
+            self.get_logger().info(f"Feature {target} restart → voice pipeline")
+            return
         else:
             self.get_logger().warning(f"Unknown action: {action}")
+            return
+
+        if not text:
+            self.get_logger().warning(f"{target} 没有定义 {action} 的语音指令")
+            return
+
+        # 关键:不自己 Popen,只把中文指令塞进 voice_words,由 LLM 解析后调 action_service
+        self._voice_pub.publish(String(data=text))
+        self.get_logger().info(f"Feature {target} {action} → voice: '{text}'")
+        self._mqtt_pub("/status/info", {"msg": f"已请求 {action} {target}(语音管线: '{text}')"})
 
     # ────────────────────────────────────────
-    #  进程看门狗
+    #  进程看门狗 — 改为 no-op
+    #  system_manager 不再 Popen 任何进程,
+    #  启停由 action_service 负责,这里只做状态报告
     # ────────────────────────────────────────
     def _watchdog_check(self):
-        for target, proc in list(self.processes.items()):
-            if proc.poll() is not None:
-                self.process_status[target] = "crashed"
-                self.get_logger().warn(f"{target} has crashed (exit code {proc.returncode})")
-                del self.processes[target]
+        # ROS 图中节点存活情况由 _poll_ros_nodes 检测
+        # 实际进程崩溃由 action_service 处理
+        pass
 
     def _poll_ros_nodes(self):
         """把 ROS 图里已经在跑的节点映射到 features，标为 running。
-        只覆盖 idle 状态；不动 system_manager 自己 Popen 起的进程。"""
+        SLAM / Nav2 模式识别采用"双信号"策略:
+          1) 进程命令行 pgrep:哪个 launch 真在跑 — 这是 ground truth
+          2) ROS 节点探测:辅助识别 + 兜底
+        两者冲突时以进程命令行优先。"""
+        # ── Step A: 进程命令行(更准,看哪个 launch 文件实际在跑) ──
+        # 用 ps + grep + grep -v 自过滤,避免 pgrep 把自己(pgrep 的 argv 也含模式)算进去
+        slam_proc_running = False
+        nav_proc_running = False
+        try:
+            ps_out = subprocess.check_output(
+                ["bash", "-c",
+                 "ps -eo pid,cmd | grep -E 'largemodel_(slam|nav)\\.launch\\.py'"
+                 " | grep -v 'grep' | grep -v 'bash -c' || true"],
+                stderr=subprocess.DEVNULL, timeout=2,
+            ).decode(errors="ignore")
+            for line in ps_out.splitlines():
+                low = line.lower()
+                if "largemodel_slam.launch.py" in low:
+                    slam_proc_running = True
+                if "largemodel_nav.launch.py" in low:
+                    nav_proc_running = True
+        except Exception:
+            pass
+
+        # ── Step B: ROS 节点列表 ──
         try:
             out = subprocess.check_output(
                 ["ros2", "node", "list"],
@@ -407,21 +461,51 @@ class SystemManager(Node):
             ).decode().strip().splitlines()
         except Exception:
             return
-        running = set()
+        raw_running = set()
         for line in out:
             node = line.strip()
             if not node: continue
             feat = ROS_NODE_TO_FEATURE.get(node)
             if feat:
-                running.add(feat); continue
+                raw_running.add(feat); continue
             for pat, f in ROS_NODE_TO_FEATURE.items():
                 if node == pat or node.endswith("/" + pat.lstrip("/")):
-                    running.add(f); break
+                    raw_running.add(f); break
+
+        # SLAM / Nav2 消歧(双信号):
+        #   1) 进程命令行优先:哪个 launch 真在跑,谁就赢
+        #   2) 没进程命令行信号时,fallback 到节点判断
+        running = set(raw_running)
+        if nav_proc_running and slam_proc_running:
+            # 同时在跑 — action_service 应当已 slam_stop(),但万一没成功,我们优先 Nav2
+            running.discard("slam")
+        elif nav_proc_running:
+            running.discard("slam")
+            running.add("nav2")
+        elif slam_proc_running:
+            running.discard("nav2")
+            running.add("slam")
+        else:
+            # 进程命令行没信号 — 用节点列表做兜底
+            if "nav2" in raw_running:
+                running.discard("slam")
+            # 否则保留 raw_running 中的 slam
+
+        # 严格遵循"节点存在才标绿":双向同步
+        #   节点在 ROS 图中         → running
+        #   节点不在 ROS 图中       → idle
+        # 没有任何"猜"或"猜自启"的逻辑
         changed = False
         for feat_id, status in list(self.process_status.items()):
-            if feat_id in running and status == "idle" and feat_id not in self.processes:
+            present = feat_id in running
+            if present and status in ("idle", "crashed"):
                 self.process_status[feat_id] = "running"
                 changed = True
+            elif not present and status == "running":
+                # 节点消失:running → idle(只有 system_manager 自己管的 Popen 进程会出现在 self.processes 里)
+                if feat_id not in self.processes:
+                    self.process_status[feat_id] = "idle"
+                    changed = True
         if changed:
             self.get_logger().debug(f"ROS-poll running features: {running}")
 
@@ -432,6 +516,11 @@ class SystemManager(Node):
         if not self._mqtt_connected:
             return
 
+        # 启动后第一次跑时,立刻抓一次节点(否则要等下一个 5s 周期)
+        if not self._initial_poll_done:
+            self._poll_ros_nodes()
+            self._initial_poll_done = True
+
         # 1. 所有功能状态
         features = {}
         for key, feat in FEATURE_REGISTRY.items():
@@ -440,6 +529,10 @@ class SystemManager(Node):
                 "status": status,
                 "name": feat["name"],
                 "category": feat.get("category", ""),
+                "auto_start": feat.get("auto_start", False),
+                "startable":  feat.get("startable", False),
+                "voice_start": feat.get("voice_start"),  # 给前端显示用
+                "voice_stop":  feat.get("voice_stop"),
             }
 
         # 2. 机器人状态
@@ -516,9 +609,68 @@ class SystemManager(Node):
         except Exception:
             pass
 
-    # ────────────────────────────────────────
-    #  清理
-    # ────────────────────────────────────────
+    # 👇 【新增的完整地图解析与重载模块】👇
+    def _handle_map_update(self, payload: dict):
+        self.get_logger().info("收到远端地图与区域更新数据，开始解析与重载...")
+        try:
+            if "map" not in payload:
+                self.get_logger().error("数据格式错误：缺少 'map' 核心字段")
+                return
+            
+            map_info = payload["map"]
+            width = map_info.get("width")
+            height = map_info.get("height")
+            resolution = map_info.get("resolution", 0.05)
+            origin_x = map_info.get("origin_x", 0.0)
+            origin_y = map_info.get("origin_y", 0.0)
+            map_data = map_info.get("data", [])
+
+            if not map_data or len(map_data) != width * height:
+                self.get_logger().error(f"地图数据不完整: 期望 {width * height}，实际 {len(map_data)}")
+                return
+
+            # 1D数组转2D矩阵并上色 (-1=205灰, 0=254白, 100=0黑)
+            grid = np.array(map_data, dtype=np.int8).reshape((height, width))
+            img = np.zeros((height, width), dtype=np.uint8)
+            img[grid == -1] = 205
+            img[grid == 0] = 254
+            img[grid >= 1] = 0
+
+            # 翻转Y轴对齐ROS坐标系
+            img = cv2.flip(img, 0)
+
+            # 覆盖真实目录
+            map_dir = "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab"
+            os.makedirs(map_dir, exist_ok=True)
+            pgm_path = os.path.join(map_dir, "my_map.pgm")
+            yaml_path = os.path.join(map_dir, "my_map.yaml")
+
+            cv2.imwrite(pgm_path, img)
+
+            yaml_content = f"""image: my_map.pgm
+resolution: {resolution}
+origin: [{origin_x}, {origin_y}, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.25
+"""
+            with open(yaml_path, 'w') as f:
+                f.write(yaml_content)
+
+            self.get_logger().info(f"地图已覆盖: {pgm_path}")
+
+            # 触发Nav2热更新
+            srv_cmd = [
+                "ros2", "service", "call", 
+                "/map_server/load_map", 
+                "nav2_msgs/srv/LoadMap", 
+                f"{{map_url: '{yaml_path}'}}"
+            ]
+            subprocess.Popen(srv_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self._mqtt_pub("/status/info", {"msg": "地图重载成功"})
+
+        except Exception as e:
+            self.get_logger().error(f"地图更新失败: {e}")
     def shutdown(self):
         self.get_logger().info("Shutting down SystemManager, stopping all features...")
         for target in list(self.processes.keys()):

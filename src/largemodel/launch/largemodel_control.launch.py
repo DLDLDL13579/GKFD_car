@@ -46,18 +46,21 @@ def generate_launch_description():
         parameters=[params_file ],
         output='screen'
     )
-    lasertracker = Node(
-        package="simple_follower_ros2", 
-        executable="lasertracker", 
-        name='lasertracker'
+    # MQTT 桥自启(用户授权)
+    mqtt_bridge_share = get_package_share_directory('mqtt_bridge_ros2')
+    mqtt_system_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(mqtt_bridge_share, 'launch', 'system_launch.py')
+        )
     )
+
     return LaunchDescription([
-        model_server,          #启动模型服务节点
-        action_server,         #启动动作服务节点
+        model_server,          # 启动模型服务节点
+        action_server,         # 启动动作服务节点
         wheeltec_mic,
         wheeltec_mic_aiui,
-        lasertracker,
-        wheeltec_sensors
+        wheeltec_sensors,
+        mqtt_system_launch,    # MQTT 桥(system_manager + webrtc + web_console) 开机自启
     ])
 
 
