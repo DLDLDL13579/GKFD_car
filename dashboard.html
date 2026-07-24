@@ -256,6 +256,9 @@ function connectMQTT() {
     mqttClient = new ClientCtor(cfg.host, cfg.wsPort, cfg.mqttPath, cid);
     mqttClient.onConnectionLost = onConnLost;
     mqttClient.onMessageArrived = onMsg;
+    // 大消息支持(地图 base64 可能上百 KB,默认 256KB 上限容易爆)
+    mqttClient.maximumPacketSize = 2 * 1024 * 1024;  // 2MB
+    mqttClient.maximumMessageSize = 2 * 1024 * 1024;
     mqttClient.connect({
       timeout: 8,
       keepAliveInterval: 30,
@@ -315,7 +318,11 @@ function onMsg(msg) {
   const t = msg.destinationName;
   $("#txt-topic").textContent = t;
   let p;
-  try { p = JSON.parse(msg.payloadString); } catch { return; }
+  try { p = JSON.parse(msg.payloadString); }
+  catch (e) {
+    sysLog(`[MQTT] JSON 解析失败 (topic=${t}): ${e.message}, payload 长度=${msg.payloadString ? msg.payloadString.length : 0}`, "error");
+    return;
+  }
   
   if (t === cfg.prefix + "/status/all") {
     if (p.features)  updateFeatures(p.features);
@@ -324,15 +331,31 @@ function onMsg(msg) {
   } else if (t === cfg.prefix + "/voice/response") {
     $("#llm-response").textContent = p.text || "(empty)";
   } 
-  // 【新增代码：处理后端发来的 Base64 地图数据】
+  // 【处理后端发来的 Base64 地图数据】—— 加 fallback + log 防故障
   else if (t === cfg.prefix + "/map_data") {
-    const c = $("#map-container");
-    const placeholder = $("#map-placeholder");
-    if (placeholder) placeholder.style.display = "none";
-    
-    // 直接渲染 Base64 图像流作为背景
-    c.style.backgroundImage = `url("data:image/png;base64,${p.image}")`;
-    sysLog(`[MQTT] 收到实时地图更新，尺寸: ${p.width}x${p.height}`, "info");
+    try {
+      if (!p || !p.image) {
+        sysLog("[MQTT] /map_data 但没拿到 image 字段", "warn");
+        return;
+      }
+      const c = document.querySelector("#map-container");
+      const placeholder = document.querySelector("#map-placeholder");
+      if (placeholder) placeholder.style.display = "none";
+      
+      // 显式清空老内容,避免 base64 url() 内部特殊字符引发问题
+      c.style.backgroundImage = "none";
+      c.style.backgroundImage = `url("data:image/png;base64,${p.image}")`;
+      // 触发重排,某些浏览器需要
+      c.offsetHeight;
+      
+      // 实时更新 telemetry
+      const ti = document.querySelector("#telemetry-info");
+      if (ti) ti.textContent = `地图尺寸 ${p.width}×${p.height} · 实时更新 ${new Date().toLocaleTimeString()}`;
+      
+      sysLog(`[MQTT] ✓ 地图已渲染 ${p.width}x${p.height} (${Math.round((p.image||'').length/1024)}KB)`, "info");
+    } catch (e) {
+      sysLog(`[MQTT] /map_data 处理失败: ${e.message}`, "error");
+    }
   }
 }
 

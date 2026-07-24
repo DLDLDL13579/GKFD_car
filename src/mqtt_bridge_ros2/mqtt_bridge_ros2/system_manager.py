@@ -577,7 +577,7 @@ class SystemManager(Node):
                     "image": b64_str,
                     "resolution": msg.info.resolution,
                     "width": w, "height": h,
-                })
+                }, retain=True)
         except Exception as e:
             self.get_logger().error(f"处理地图数据时出错: {e}")
 
@@ -602,10 +602,10 @@ class SystemManager(Node):
     # ────────────────────────────────────────
     #  MQTT 发布 helper
     # ────────────────────────────────────────
-    def _mqtt_pub(self, topic_suffix: str, data: dict, qos=0):
+    def _mqtt_pub(self, topic_suffix: str, data: dict, qos=0, retain=False):
         full_topic = f"{self.prefix}{topic_suffix}"
         try:
-            self.mqtt.publish(full_topic, json.dumps(data), qos=qos)
+            self.mqtt.publish(full_topic, json.dumps(data), qos=qos, retain=retain)
         except Exception:
             pass
 

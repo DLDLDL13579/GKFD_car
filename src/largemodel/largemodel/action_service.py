@@ -121,6 +121,7 @@ class CustomActionServer(Node):
             "finish_task": "f机器人反馈：执行跟随任务完成",
             "multiple_done": "机器人反馈：执行{actions}完成",
             "shutdown_done": "机器人反馈：关机指令执行完毕",
+            "restart_done": "机器人反馈：重启指令执行完毕",
             "auto_charge_done": "机器人反馈：执行auto_charge()完成，已成功对接充电桩",
             "leave_charge_done": "机器人反馈：执行leave_charge()完成，已安全脱离充电桩",
             "set_initial_pose_done": "机器人反馈：执行set_initial_pose_to_origin()完成，位置已重置"
@@ -787,6 +788,22 @@ class CustomActionServer(Node):
         
         if not self.interrupt_flag:
             self.action_status_pub("shutdown_done")
+    def restart(self):
+        if hasattr(self, '_shutting_down') and self._shutting_down:
+            return
+        self._shutting_down = True
+        
+        self.get_logger().info("准备重启系统...")
+        self.stop()
+        self.stop_follow()
+        self.interrupt_flag = True
+        time.sleep(3.0)
+        
+        # 使用你机器上的密码 'nvidia' 调用系统的重启命令
+        os.system("echo 'nvidia' | sudo -S /sbin/reboot")
+        
+        if not self.interrupt_flag:
+            self.action_status_pub("restart_done")
     def visual_align(self):
         """
         视觉伺服精确定位（极限防抖消除随机性版）：
