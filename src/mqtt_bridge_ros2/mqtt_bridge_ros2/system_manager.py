@@ -13,17 +13,21 @@ from rclpy.node import Node
 from std_msgs.msg import String, Float32, Bool, Int8
 from geometry_msgs.msg import Twist, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry, OccupancyGrid
+from sensor_msgs.msg import Image
 from rclpy.qos import QoSProfile, DurabilityPolicy
 import numpy as np
 import cv2
 import base64
 import paho.mqtt.client as mqtt
 import json
+import math
 import subprocess
 import os
 import time
 import signal
 import threading
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 
 # ════════════════════════════════════════════
 #  功能注册表 — 所有可管理的功能单元
@@ -223,9 +227,11 @@ class SystemManager(Node):
         )
         self._voice_pub = self.create_publisher(String, "voice_words", 1)
         self._debug_pub = self.create_publisher(String, "/debug_cmd", 1)
+        self._map_pgm_pub = self.create_publisher(Image, "/map_pgm", 1)
 
         # ═══ ROS2 订阅者 ═══
         self._odom_sub = self.create_subscription(Odometry, "/odom", self._odom_cb, 10)
+        self._odom_combined_sub = self.create_subscription(Odometry, "/odom_combined", self._odom_combined_cb, 10)
         # ROS 2 地图专用 QoS（TRANSIENT_LOCAL 让后入网节点也能拿到旧地图）
         map_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self._map_sub = self.create_subscription(OccupancyGrid, "/map", self._map_cb, map_qos)
@@ -239,11 +245,15 @@ class SystemManager(Node):
             String, "feedback_words", self._feedback_cb, 10
         )
 
+        # ═══ TF 监听器 ═══
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
         # ═══ 状态缓存 ═══
         self._odom_x = 0.0
         self._odom_y = 0.0
         self._odom_vx = 0.0
         self._odom_vz = 0.0
+        self._odom_yaw = 0.0
         self._battery = 0.0
         self._charging = False
         self._last_llm_feedback = ""
@@ -291,7 +301,7 @@ class SystemManager(Node):
                 
                 # 👇 【新增以下两行】 👇
                 (f"{self.prefix}/cmd/map_update", 0),    # 未来的正确路径 (robot_0/cmd/map_update)
-                ("robot/robot001/cmd/map_update", 0),    # 您当前的强行测试路径
+                ("robot/all/cmd/broadcast", 0),    # 您当前的强行测试路径
                 (f"{self.prefix}/cmd/voice", 0),          # 前端按钮 = 本地语音,统一进 voice pipeline
             ]
             self.mqtt.subscribe(topics)
@@ -369,7 +379,7 @@ class SystemManager(Node):
                     self._debug_pub.publish(String(data=cmd))
 
             # 👇 【新增以下分支：只要匹配测试路径或正式路径，都去执行地图更新】👇
-            elif topic in [f"{self.prefix}/cmd/map_update", "robot/robot001/cmd/map_update"]:
+            elif topic in [f"{self.prefix}/cmd/map_update", "robot/all/cmd/broadcast"]:
                 self._handle_map_update(data)
 
         except json.JSONDecodeError:
@@ -535,9 +545,20 @@ class SystemManager(Node):
                 "voice_stop":  feat.get("voice_stop"),
             }
 
+        # 尝试从 TF(map-base_footprint)获取真实坐标
+        try:
+            trans = self.tf_buffer.lookup_transform("map", "base_footprint", rclpy.time.Time())
+            self._odom_x = trans.transform.translation.x
+            self._odom_y = trans.transform.translation.y
+            q = trans.transform.rotation
+            self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
+        except Exception:
+            pass
         # 2. 机器人状态
         robot = {
-            "position": {"x": round(self._odom_x, 3), "y": round(self._odom_y, 3)},
+            "position": {"x": round(self._odom_x, 3), "y": round(self._odom_y, 3),
+                         "yaw": round(self._odom_yaw, 4),
+                         "yaw_deg": round(math.degrees(self._odom_yaw), 1)},
             "velocity": {"linear": round(self._odom_vx, 3), "angular": round(self._odom_vz, 3)},
             "battery": round(self._battery, 2),
             "charging": self._charging,
@@ -565,10 +586,10 @@ class SystemManager(Node):
             w = msg.info.width
             h = msg.info.height
             data = np.array(msg.data, dtype=np.int8).reshape((h, w))
-            img = np.zeros((h, w), dtype=np.uint8)
-            img[data == -1] = 128  # 未知
-            img[data == 0]  = 255  # 安全
-            img[data >= 1]  = 0    # 障碍
+            img = np.zeros((h, w), dtype=np.uint8) # 默认全黑
+            img[data == -1] = 128  # 未知区域 -> 保持灰色 (128)
+            img[data == 0]  = 0    # 你的障碍物(0) -> 涂成黑色 (0)
+            img[data >= 1]  = 255  # 你的空白区域(>1) -> 涂成白色 (255)
             img = cv2.flip(img, 0) # Y 轴翻转对齐 ROS/前端
             _, buf = cv2.imencode(".png", img)
             b64_str = base64.b64encode(buf).decode("utf-8")
@@ -577,16 +598,93 @@ class SystemManager(Node):
                     "image": b64_str,
                     "resolution": msg.info.resolution,
                     "width": w, "height": h,
+                    "origin_x": msg.info.origin.position.x,
+                    "origin_y": msg.info.origin.position.y,
+                }, retain=True)
+
+            # 新增: 直接发 sensor_msgs/Image (mono8 裸像素) 给 ROS2 节点 — 走标准 Image 消息,不打包 PGM 文件头
+            img_msg = Image()
+            img_msg.header.stamp = self.get_clock().now().to_msg()
+            img_msg.header.frame_id = "map"
+            img_msg.height = h
+            img_msg.width = w
+            img_msg.encoding = "mono8"
+            img_msg.is_bigendian = 0
+            img_msg.step = w  # 单通道 1 byte/px, 每行字节数 = w
+            img_msg.data = img.tobytes()  # 复用 PNG 那段的同一张灰度图 (cv2.flip 后的 uint8), 直接 tobytes
+            self._map_pgm_pub.publish(img_msg)
+            # 直接转发 /map 原始 OccupancyGrid.data(int8[]) 到 MQTT
+            if self._mqtt_connected:
+                raw_b64 = base64.b64encode(bytes(msg.data)).decode("utf-8")
+                self._mqtt_pub("/map_pgm", {
+                    "image": raw_b64,
+                    "header": {
+                        "stamp": {
+                            "sec": msg.header.stamp.sec,
+                            "nanosec": msg.header.stamp.nanosec
+                        },
+                        "frame_id": msg.header.frame_id
+                    },
+                    "info": {
+                        "map_load_time": {
+                            "sec": msg.info.map_load_time.sec,
+                            "nanosec": msg.info.map_load_time.nanosec
+                        },
+                        "resolution": msg.info.resolution,
+                        "width": msg.info.width,
+                        "height": msg.info.height,
+                        "origin": {
+                            "position": {
+                                "x": msg.info.origin.position.x,
+                                "y": msg.info.origin.position.y,
+                                "z": msg.info.origin.position.z
+                            },
+                            "orientation": {
+                                "x": msg.info.origin.orientation.x,
+                                "y": msg.info.origin.orientation.y,
+                                "z": msg.info.origin.orientation.z,
+                                "w": msg.info.origin.orientation.w
+                            }
+                        }
+                    }
+                }, retain=True)
+                self._mqtt_pub("/map_data", {
+                    "image": b64_str,
+                    "resolution": msg.info.resolution,
+                    "width": w, "height": h,
+                    "origin_x": msg.info.origin.position.x,
+                    "origin_y": msg.info.origin.position.y,
                 }, retain=True)
         except Exception as e:
+            # 必须保留这个 except，否则 Python 语法报错
             self.get_logger().error(f"处理地图数据时出错: {e}")
 
     def _odom_cb(self, msg: Odometry):
+        """原始 /odom — 当 /odom_combined 不在时(EKF 未起)兜底用"""
         self._odom_x = msg.pose.pose.position.x
         self._odom_y = msg.pose.pose.position.y
         self._odom_vx = msg.twist.twist.linear.x
         self._odom_vz = msg.twist.twist.angular.z
+        # 兜底: /odom_combined 未启动时也能拿到朝向
+        q = msg.pose.pose.orientation
+        self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
 
+
+    def _odom_combined_cb(self, msg: Odometry):
+        """EKF 融合里程计 — 用于前端地图定位(含朝向),优先级高于 /odom"""
+        self._odom_x = msg.pose.pose.position.x
+        self._odom_y = msg.pose.pose.position.y
+        self._odom_vx = msg.twist.twist.linear.x
+        self._odom_vz = msg.twist.twist.angular.z
+        q = msg.pose.pose.orientation
+        self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
+
+    @staticmethod
+    def _quat_to_yaw(x, y, z, w):
+        """四元数 → yaw（弧度）"""
+        siny_cosp = 2.0 * (w * z + x * y)
+        cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
+        return math.atan2(siny_cosp, cosy_cosp)
     def _voltage_cb(self, msg: Float32):
         self._battery = msg.data
 

@@ -40,7 +40,10 @@ def generate_launch_description():
           ('scan', '/scan'),
           ('rgb/image', '/camera/color/image_raw'), 
           ('rgb/camera_info', '/camera/color/camera_info'),
-          ('depth/image', '/camera/aligned_depth_to_color/image_raw')]
+          ('depth/image', '/camera/aligned_depth_to_color/image_raw'),
+          # ==== 极度核心：剥夺 rtabmap 的全局地图发布权 ====
+          ('map', '/rtabmap/grid_map') 
+    ]
 
     rtabmap_parameters = {
           'database_path': '/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/my_room.db',
@@ -52,10 +55,10 @@ def generate_launch_description():
           'qos_image': qos,
           'qos_imu': qos,
           # 解除算法的自我保护，强制拉回严重错位！
-          'Icp/MaxTranslation': '1.5',       # 【核心】允许单次纠正最大 1.5 米的平移误差（默认很小，偏了就不敢拉了）
-          'Icp/MaxCorrespondenceDistance': '0.5', # 【核心】允许相距 0.5 米的雷达点和地图墙壁进行强行吸附
-          'Icp/CorrespondenceRatio': '0.15', # 【核心】极其宽容：只要有 15% 的雷达点能跟地图对上，就强行拉回！（应对环境杂物干扰）
-          'Icp/VoxelSize': '0.05',           # 匹配精度保持 5cm
+          'Icp/MaxTranslation': '1.5',       
+          'Icp/MaxCorrespondenceDistance': '0.5', 
+          'Icp/CorrespondenceRatio': '0.15', 
+          'Icp/VoxelSize': '0.05',           
           'Icp/PointToPlane': 'true',
           # ==== 基础对齐策略 ====
           'Reg/Strategy': '1',           
@@ -64,17 +67,15 @@ def generate_launch_description():
           'Optimizer/GravitySigma': '0',
           
           # ==== 【新增核心纠偏配置：强制雷达介入】 ====
-          # 核心作用：当相机视觉匹配失效时，允许系统直接根据激光雷达扫到的空间轮廓，强行拉扯里程计对齐全局地图！
           'RGBD/ProximityBySpace': 'true',   
-          'RGBD/ProximityPathMax': '1',      # 限制雷达空间匹配的搜索范围（1米内），防止计算量过大卡死主板
-          'RGBD/OptimizeFromGraphEnd': 'false', # 保证以全局地图原点为绝对锚点进行纠偏
+          'RGBD/ProximityPathMax': '1',      
+          'RGBD/OptimizeFromGraphEnd': 'false', 
           
           # ==== 【新增更新频率：逼迫算法勤奋修正】 ====
-          # 核心作用：不等到积累大误差，每移动 10cm 或 转动 5.7度，就强制做一次雷达ICP地图匹配纠偏
           'RGBD/LinearUpdate': '0.1',        
           'RGBD/AngularUpdate': '0.1',       
 
-          # ==== 栅格地图生成策略 (保持你原有的优秀配置) ====
+          # ==== 栅格地图生成策略 ====
           'Grid/FromDepth': 'false',         
           'Grid/3D': 'false',                
           'Grid/RangeMax': '10.0',           
@@ -135,6 +136,28 @@ def generate_launch_description():
             launch_arguments={'namespace': namespace, 'use_sim_time': use_sim_time, 'autostart': autostart, 'params_file': params_file, 'use_composition': use_composition, 'use_respawn': use_respawn, 'container_name': 'nav2_container'}.items()),
     ])
 
+    # ==== 【新增核心：请回全局地图发布者 map_server】 ====
+    map_server_node = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
+        output='screen',
+        parameters=[{'yaml_filename': map_yaml_file}, 
+                    {'use_sim_time': use_sim_time}]
+    )
+
+    lifecycle_manager_map_server = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_map_server',
+        output='screen',
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'autostart': autostart},
+            {'node_names': ['map_server']}
+        ]
+    )
+
     ld = LaunchDescription()
     ld.add_action(stdout_linebuf_envvar)
 
@@ -173,5 +196,9 @@ def generate_launch_description():
     ))
 
     ld.add_action(bringup_cmd_group)
+    
+    # 挂载新增加的 map_server
+    ld.add_action(map_server_node)
+    ld.add_action(lifecycle_manager_map_server)
 
     return ld

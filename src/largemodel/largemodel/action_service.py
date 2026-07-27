@@ -1329,11 +1329,31 @@ class CustomActionServer(Node):
         return result
 
     def _check_sensor_timer(self):
+        # 1. 高频监测：每 5 秒雷打不动地执行一次
         curr = {n for n, t in self._sensor_map.items() if not self.get_publishers_info_by_topic(t)}
-        if getattr(self, '_last_missing', set()) & curr:          
-            msg = String()
-            msg.data = '数据异常，请检查: ' + ', '.join(self._last_missing & curr)
-            self.text_pub.publish(msg)
+        bad = getattr(self, '_last_missing', set()) & curr
+        
+        if bad:
+            # 监测报警：每5秒向控制台输出警告日志
+            self.get_logger().warning(f"高频监控警告 - 传感器数据异常: {', '.join(bad)}")
+            
+            # 2. 语音播报节流：限制机器人发声的频率
+            now = time.time()
+            prev_t = getattr(self, '_last_alert_t', 0.0)
+            prev_set = getattr(self, '_last_alert_set', set())
+            
+            # 触发语音条件：异常情况发生了变化，或者距离上次喊话已经过了 60 秒
+            if bad != prev_set or (now - prev_t) >= 60.0:
+                msg = String()
+                msg.data = '数据异常，请检查: ' + ', '.join(bad)
+                self.text_pub.publish(msg)  # 触发大模型和TTS发声
+                
+                self._last_alert_t = now
+                self._last_alert_set = bad
+        else:
+            # 传感器恢复正常，清空报警状态
+            self._last_alert_set = set()
+            
         self._last_missing = curr
 
     def finishtask(self):  
