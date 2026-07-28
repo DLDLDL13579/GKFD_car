@@ -191,7 +191,7 @@ class SystemManager(Node):
         self.declare_parameter("mqtt_port", 1883)
         self.declare_parameter("mqtt_client_id", "jetson_robot")
         self.declare_parameter("topic_prefix", "robot_0")
-        self.declare_parameter("status_interval", 3.0)
+        self.declare_parameter("status_interval", 0.2)  # 修改为 0.2 秒 (5Hz)
 
         self.broker = self.get_parameter("mqtt_broker").value
         self.port = self.get_parameter("mqtt_port").value
@@ -618,21 +618,14 @@ class SystemManager(Node):
             self.get_logger().error(f"处理地图数据时出错: {e}")
 
     def _odom_cb(self, msg: Odometry):
-        self._odom_x = msg.pose.pose.position.x
-        self._odom_y = msg.pose.pose.position.y
+        # 彻底删除位置更新,防止覆盖 TF 坐标
         self._odom_vx = msg.twist.twist.linear.x
         self._odom_vz = msg.twist.twist.angular.z
-        q = msg.pose.pose.orientation
-        self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
-
 
     def _odom_combined_cb(self, msg: Odometry):
-        self._odom_x = msg.pose.pose.position.x
-        self._odom_y = msg.pose.pose.position.y
+        # 彻底删除位置更新,防止覆盖 TF 坐标
         self._odom_vx = msg.twist.twist.linear.x
         self._odom_vz = msg.twist.twist.angular.z
-        q = msg.pose.pose.orientation
-        self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
 
     @staticmethod
     def _quat_to_yaw(x, y, z, w):
@@ -717,11 +710,12 @@ class SystemManager(Node):
 
             # ==== 5. 保留方向：将 yaw 写入 origin ====
             yaml_content = f"""image: my_map.pgm
+mode: trinary
 resolution: {resolution}
 origin: [{origin_x}, {origin_y}, {yaw}]
 negate: 0
 occupied_thresh: 0.65
-free_thresh: 0.25
+free_thresh: 0.19
 """
             with open(yaml_path, 'w') as f:
                 f.write(yaml_content)

@@ -1009,6 +1009,9 @@ class CustomActionServer(Node):
             subprocess.run(['ros2', 'run', 'nav2_map_server', 'map_saver_cli',
                            '-t', '/map', 
                            '-f', '/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab/my_map',
+                           '--free', '0.19',
+                           '--occ', '0.65',
+                           '--mode', 'trinary',
                            '--ros-args', 
                            '-p', 'save_map_timeout:=10000.0'],
                           check=False)
