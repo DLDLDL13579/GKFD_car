@@ -299,13 +299,12 @@ class SystemManager(Node):
                 (f"{self.prefix}/debug_cmd", 0),
                 (f"{self.prefix}/webrtc_answer", 0),
                 
-                # 👇 【新增以下两行】 👇
-                (f"{self.prefix}/cmd/map_update", 0),    # 未来的正确路径 (robot_0/cmd/map_update)
-                ("robot/all/cmd/broadcast", 0),    # 您当前的强行测试路径
+                (f"{self.prefix}/cmd/map_update", 0),
+                ("robot/all/cmd/broadcast", 0),
                 (f"{self.prefix}/cmd/voice", 0),          # 前端按钮 = 本地语音,统一进 voice pipeline
             ]
             self.mqtt.subscribe(topics)
-            self.get_logger().info(f"Subscribed to {len(topics)} topics under {self.prefix} (and test topics)")
+            self.get_logger().info(f"Subscribed to {len(topics)} topics under {self.prefix}")
         else:
             self._mqtt_connected = False
             self.get_logger().error(f"MQTT rc={rc}")
@@ -378,7 +377,7 @@ class SystemManager(Node):
                 if cmd:
                     self._debug_pub.publish(String(data=cmd))
 
-            # 👇 【新增以下分支：只要匹配测试路径或正式路径，都去执行地图更新】👇
+            # 👇 匹配测试路径或正式路径，去执行地图更新👇
             elif topic in [f"{self.prefix}/cmd/map_update", "robot/all/cmd/broadcast"]:
                 self._handle_map_update(data)
 
@@ -389,7 +388,6 @@ class SystemManager(Node):
 
     # ────────────────────────────────────────
     #  功能启停核心逻辑 — 全部走 voice pipeline
-    #  统一:前端按钮 / 旧 /sys_cmd → voice_words → LLM → action_service
     # ────────────────────────────────────────
     def _handle_feature_cmd(self, action: str, target: str, params: dict):
         if target not in FEATURE_REGISTRY:
@@ -407,7 +405,6 @@ class SystemManager(Node):
         elif action == "stop":
             text = feat.get("voice_stop")
         elif action == "restart":
-            # 先停后起:连发两条语音
             for t in (feat.get("voice_stop"), feat.get("voice_start")):
                 if t:
                     self._voice_pub.publish(String(data=t))
@@ -422,29 +419,17 @@ class SystemManager(Node):
             self.get_logger().warning(f"{target} 没有定义 {action} 的语音指令")
             return
 
-        # 关键:不自己 Popen,只把中文指令塞进 voice_words,由 LLM 解析后调 action_service
         self._voice_pub.publish(String(data=text))
         self.get_logger().info(f"Feature {target} {action} → voice: '{text}'")
         self._mqtt_pub("/status/info", {"msg": f"已请求 {action} {target}(语音管线: '{text}')"})
 
     # ────────────────────────────────────────
-    #  进程看门狗 — 改为 no-op
-    #  system_manager 不再 Popen 任何进程,
-    #  启停由 action_service 负责,这里只做状态报告
+    #  进程看门狗
     # ────────────────────────────────────────
     def _watchdog_check(self):
-        # ROS 图中节点存活情况由 _poll_ros_nodes 检测
-        # 实际进程崩溃由 action_service 处理
         pass
 
     def _poll_ros_nodes(self):
-        """把 ROS 图里已经在跑的节点映射到 features，标为 running。
-        SLAM / Nav2 模式识别采用"双信号"策略:
-          1) 进程命令行 pgrep:哪个 launch 真在跑 — 这是 ground truth
-          2) ROS 节点探测:辅助识别 + 兜底
-        两者冲突时以进程命令行优先。"""
-        # ── Step A: 进程命令行(更准,看哪个 launch 文件实际在跑) ──
-        # 用 ps + grep + grep -v 自过滤,避免 pgrep 把自己(pgrep 的 argv 也含模式)算进去
         slam_proc_running = False
         nav_proc_running = False
         try:
@@ -463,7 +448,6 @@ class SystemManager(Node):
         except Exception:
             pass
 
-        # ── Step B: ROS 节点列表 ──
         try:
             out = subprocess.check_output(
                 ["ros2", "node", "list"],
@@ -482,12 +466,8 @@ class SystemManager(Node):
                 if node == pat or node.endswith("/" + pat.lstrip("/")):
                     raw_running.add(f); break
 
-        # SLAM / Nav2 消歧(双信号):
-        #   1) 进程命令行优先:哪个 launch 真在跑,谁就赢
-        #   2) 没进程命令行信号时,fallback 到节点判断
         running = set(raw_running)
         if nav_proc_running and slam_proc_running:
-            # 同时在跑 — action_service 应当已 slam_stop(),但万一没成功,我们优先 Nav2
             running.discard("slam")
         elif nav_proc_running:
             running.discard("slam")
@@ -496,15 +476,9 @@ class SystemManager(Node):
             running.discard("nav2")
             running.add("slam")
         else:
-            # 进程命令行没信号 — 用节点列表做兜底
             if "nav2" in raw_running:
                 running.discard("slam")
-            # 否则保留 raw_running 中的 slam
 
-        # 严格遵循"节点存在才标绿":双向同步
-        #   节点在 ROS 图中         → running
-        #   节点不在 ROS 图中       → idle
-        # 没有任何"猜"或"猜自启"的逻辑
         changed = False
         for feat_id, status in list(self.process_status.items()):
             present = feat_id in running
@@ -512,7 +486,6 @@ class SystemManager(Node):
                 self.process_status[feat_id] = "running"
                 changed = True
             elif not present and status == "running":
-                # 节点消失:running → idle(只有 system_manager 自己管的 Popen 进程会出现在 self.processes 里)
                 if feat_id not in self.processes:
                     self.process_status[feat_id] = "idle"
                     changed = True
@@ -526,12 +499,10 @@ class SystemManager(Node):
         if not self._mqtt_connected:
             return
 
-        # 启动后第一次跑时,立刻抓一次节点(否则要等下一个 5s 周期)
         if not self._initial_poll_done:
             self._poll_ros_nodes()
             self._initial_poll_done = True
 
-        # 1. 所有功能状态
         features = {}
         for key, feat in FEATURE_REGISTRY.items():
             status = self.process_status.get(key, "idle")
@@ -541,11 +512,10 @@ class SystemManager(Node):
                 "category": feat.get("category", ""),
                 "auto_start": feat.get("auto_start", False),
                 "startable":  feat.get("startable", False),
-                "voice_start": feat.get("voice_start"),  # 给前端显示用
+                "voice_start": feat.get("voice_start"),
                 "voice_stop":  feat.get("voice_stop"),
             }
 
-        # 尝试从 TF(map-base_footprint)获取真实坐标
         try:
             trans = self.tf_buffer.lookup_transform("map", "base_footprint", rclpy.time.Time())
             self._odom_x = trans.transform.translation.x
@@ -554,7 +524,7 @@ class SystemManager(Node):
             self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
         except Exception:
             pass
-        # 2. 机器人状态
+
         robot = {
             "position": {"x": round(self._odom_x, 3), "y": round(self._odom_y, 3),
                          "yaw": round(self._odom_yaw, 4),
@@ -565,13 +535,10 @@ class SystemManager(Node):
             "online": True,
         }
 
-        # 3. 大模型反馈回传
-        llm_feedback = self._last_llm_feedback
-
         report = {
             "features": features,
             "robot": robot,
-            "llm_feedback": llm_feedback,
+            "llm_feedback": self._last_llm_feedback,
             "timestamp": time.time(),
         }
 
@@ -581,16 +548,15 @@ class SystemManager(Node):
     #  ROS2 订阅回调
     # ────────────────────────────────────────
     def _map_cb(self, msg: OccupancyGrid):
-        """把 /map 的 OccupancyGrid 矩阵压缩为 PNG-Base64,通过 MQTT 发给前端。"""
         try:
             w = msg.info.width
             h = msg.info.height
             data = np.array(msg.data, dtype=np.int8).reshape((h, w))
-            img = np.zeros((h, w), dtype=np.uint8) # 默认全黑
-            img[data == -1] = 128  # 未知区域 -> 保持灰色 (128)
-            img[data == 0]  = 0    # 你的障碍物(0) -> 涂成黑色 (0)
-            img[data >= 1]  = 255  # 你的空白区域(>1) -> 涂成白色 (255)
-            img = cv2.flip(img, 0) # Y 轴翻转对齐 ROS/前端
+            img = np.zeros((h, w), dtype=np.uint8)
+            img[data == -1] = 128
+            img[data == 0]  = 254
+            img[data >= 1]  = 0
+            
             _, buf = cv2.imencode(".png", img)
             b64_str = base64.b64encode(buf).decode("utf-8")
             if self._mqtt_connected:
@@ -602,7 +568,6 @@ class SystemManager(Node):
                     "origin_y": msg.info.origin.position.y,
                 }, retain=True)
 
-            # 新增: 直接发 sensor_msgs/Image (mono8 裸像素) 给 ROS2 节点 — 走标准 Image 消息,不打包 PGM 文件头
             img_msg = Image()
             img_msg.header.stamp = self.get_clock().now().to_msg()
             img_msg.header.frame_id = "map"
@@ -610,14 +575,14 @@ class SystemManager(Node):
             img_msg.width = w
             img_msg.encoding = "mono8"
             img_msg.is_bigendian = 0
-            img_msg.step = w  # 单通道 1 byte/px, 每行字节数 = w
-            img_msg.data = img.tobytes()  # 复用 PNG 那段的同一张灰度图 (cv2.flip 后的 uint8), 直接 tobytes
+            img_msg.step = w
+            img_msg.data = img.tobytes()
             self._map_pgm_pub.publish(img_msg)
+
             # 直接转发 /map 原始 OccupancyGrid.data(int8[]) 到 MQTT
             if self._mqtt_connected:
                 raw_b64 = base64.b64encode(bytes(msg.data)).decode("utf-8")
                 self._mqtt_pub("/map_pgm", {
-                    "image": raw_b64,
                     "header": {
                         "stamp": {
                             "sec": msg.header.stamp.sec,
@@ -646,32 +611,22 @@ class SystemManager(Node):
                                 "w": msg.info.origin.orientation.w
                             }
                         }
-                    }
-                }, retain=True)
-                self._mqtt_pub("/map_data", {
-                    "image": b64_str,
-                    "resolution": msg.info.resolution,
-                    "width": w, "height": h,
-                    "origin_x": msg.info.origin.position.x,
-                    "origin_y": msg.info.origin.position.y,
+                    },
+                    "image": raw_b64  
                 }, retain=True)
         except Exception as e:
-            # 必须保留这个 except，否则 Python 语法报错
             self.get_logger().error(f"处理地图数据时出错: {e}")
 
     def _odom_cb(self, msg: Odometry):
-        """原始 /odom — 当 /odom_combined 不在时(EKF 未起)兜底用"""
         self._odom_x = msg.pose.pose.position.x
         self._odom_y = msg.pose.pose.position.y
         self._odom_vx = msg.twist.twist.linear.x
         self._odom_vz = msg.twist.twist.angular.z
-        # 兜底: /odom_combined 未启动时也能拿到朝向
         q = msg.pose.pose.orientation
         self._odom_yaw = self._quat_to_yaw(q.x, q.y, q.z, q.w)
 
 
     def _odom_combined_cb(self, msg: Odometry):
-        """EKF 融合里程计 — 用于前端地图定位(含朝向),优先级高于 /odom"""
         self._odom_x = msg.pose.pose.position.x
         self._odom_y = msg.pose.pose.position.y
         self._odom_vx = msg.twist.twist.linear.x
@@ -681,10 +636,10 @@ class SystemManager(Node):
 
     @staticmethod
     def _quat_to_yaw(x, y, z, w):
-        """四元数 → yaw（弧度）"""
         siny_cosp = 2.0 * (w * z + x * y)
         cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
         return math.atan2(siny_cosp, cosy_cosp)
+        
     def _voltage_cb(self, msg: Float32):
         self._battery = msg.data
 
@@ -692,14 +647,10 @@ class SystemManager(Node):
         self._charging = msg.data
 
     def _feedback_cb(self, msg: String):
-        """大模型语音反馈 → 转发到 MQTT"""
         self._last_llm_feedback = msg.data
         if self._mqtt_connected:
             self._mqtt_pub("/voice/response", {"text": msg.data})
 
-    # ────────────────────────────────────────
-    #  MQTT 发布 helper
-    # ────────────────────────────────────────
     def _mqtt_pub(self, topic_suffix: str, data: dict, qos=0, retain=False):
         full_topic = f"{self.prefix}{topic_suffix}"
         try:
@@ -707,37 +658,56 @@ class SystemManager(Node):
         except Exception:
             pass
 
-    # 👇 【新增的完整地图解析与重载模块】👇
+    # 👇 【彻底修复：双模解析、修正颜色、保留方向的完整地图重载模块】👇
     def _handle_map_update(self, payload: dict):
-        self.get_logger().info("收到远端地图与区域更新数据，开始解析与重载...")
+        self.get_logger().info("收到远端地图更新数据，开始解析与重载...")
         try:
-            if "map" not in payload:
-                self.get_logger().error("数据格式错误：缺少 'map' 核心字段")
+            # ==== 1. 兼容并统一数据格式 ====
+            if "image" in payload and "info" in payload:
+                # 新标准格式 (优先处理：Base64 + info 结构)
+                info = payload["info"]
+                width = info["width"]
+                height = info["height"]
+                resolution = info["resolution"]
+                
+                # 【修改点】：使用 .get() 设定默认值，兼容前端缺少字段的情况
+                origin_pos = info["origin"].get("position", {"x": 0.0, "y": 0.0, "z": 0.0})
+                origin_ori = info["origin"].get("orientation", {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0})
+                
+                origin_x = origin_pos["x"]
+                origin_y = origin_pos["y"]
+                
+                # 提取原始地图的旋转角度 (Yaw)
+                yaw = self._quat_to_yaw(origin_ori["x"], origin_ori["y"], origin_ori["z"], origin_ori["w"])
+                
+                # 解码 Base64 数组
+                raw_bytes = base64.b64decode(payload["image"])
+                grid = np.frombuffer(raw_bytes, dtype=np.int8).reshape((height, width))
+                
+            elif "map" in payload and "data" in payload["map"]:
+                map_info = payload["map"]
+                width = map_info["width"]
+                height = map_info["height"]
+                resolution = map_info.get("resolution", 0.05)
+                origin_x = map_info.get("origin_x", 0.0)
+                origin_y = map_info.get("origin_y", 0.0)
+                yaw = 0.0 # 旧格式丢失了方向，只能默认 0° 兜底
+                
+                grid = np.array(map_info["data"], dtype=np.int8).reshape((height, width))
+            else:
+                self.get_logger().error("数据格式错误：无法识别地图 Payload")
                 return
-            
-            map_info = payload["map"]
-            width = map_info.get("width")
-            height = map_info.get("height")
-            resolution = map_info.get("resolution", 0.05)
-            origin_x = map_info.get("origin_x", 0.0)
-            origin_y = map_info.get("origin_y", 0.0)
-            map_data = map_info.get("data", [])
 
-            if not map_data or len(map_data) != width * height:
-                self.get_logger().error(f"地图数据不完整: 期望 {width * height}，实际 {len(map_data)}")
-                return
-
-            # 1D数组转2D矩阵并上色 (-1=205灰, 0=254白, 100=0黑)
-            grid = np.array(map_data, dtype=np.int8).reshape((height, width))
+            # ==== 2. 颜色阈值映射 (修复颜色丢失问题) ====
             img = np.zeros((height, width), dtype=np.uint8)
-            img[grid == -1] = 205
-            img[grid == 0] = 254
-            img[grid >= 1] = 0
+            img[grid == -1] = 128  # 核心：将未知区域改为128(标准灰)，完美落在未知阈值之间
+            img[grid == 0]  = 254  # 空白安全区域 (白色)
+            img[grid >= 1]  = 0    # 障碍物区域 (黑色)
 
-            # 翻转Y轴对齐ROS坐标系
+            # ==== 3. 翻转 Y 轴，对齐 ROS 坐标系 ====
             img = cv2.flip(img, 0)
 
-            # 覆盖真实目录
+            # ==== 4. 覆盖真实物理目录 ====
             map_dir = "/home/nvidia/wheeltec_ros2/src/wheeltec_robot_rtab"
             os.makedirs(map_dir, exist_ok=True)
             pgm_path = os.path.join(map_dir, "my_map.pgm")
@@ -745,9 +715,10 @@ class SystemManager(Node):
 
             cv2.imwrite(pgm_path, img)
 
+            # ==== 5. 保留方向：将 yaw 写入 origin ====
             yaml_content = f"""image: my_map.pgm
 resolution: {resolution}
-origin: [{origin_x}, {origin_y}, 0.000000]
+origin: [{origin_x}, {origin_y}, {yaw}]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.25
@@ -755,9 +726,9 @@ free_thresh: 0.25
             with open(yaml_path, 'w') as f:
                 f.write(yaml_content)
 
-            self.get_logger().info(f"地图已覆盖: {pgm_path}")
+            self.get_logger().info(f"地图已覆盖: {pgm_path} (Yaw: {yaw})")
 
-            # 触发Nav2热更新
+            # ==== 6. 触发 Nav2 热更新 ====
             srv_cmd = [
                 "ros2", "service", "call", 
                 "/map_server/load_map", 
@@ -769,6 +740,7 @@ free_thresh: 0.25
 
         except Exception as e:
             self.get_logger().error(f"地图更新失败: {e}")
+            
     def shutdown(self):
         self.get_logger().info("Shutting down SystemManager, stopping all features...")
         for target in list(self.processes.keys()):
