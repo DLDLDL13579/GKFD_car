@@ -11,7 +11,7 @@ def generate_launch_description():
         Node(package="mqtt_bridge_ros2", executable="system_manager", output="screen",
              parameters=[{"mqtt_broker":"localhost","mqtt_port":1883,
                           "mqtt_client_id":"jetson_robot","topic_prefix":"robot_0",
-                          "status_interval":3.0}]),
+                          "status_interval":0.2}]),
         Node(package="mqtt_bridge_ros2", executable="webrtc_pusher", output="screen",
              parameters=[{"image_topic":"/camera/color/image_raw","webrtc_port":8082}]),
         IncludeLaunchDescription(

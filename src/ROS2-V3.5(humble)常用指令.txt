@@ -2,7 +2,8 @@ nfs挂载:
 sudo mount -t nfs 192.168.0.100:/home/nvidia/wheeltec_ros2 /mnt
 nfs解除挂载:
 sudo umount -t nfs 192.168.0.100:/home/nvidia/wheeltec_ros2 /mnt
-
+查看实时日志
+sudo journalctl _SYSTEMD_USER_UNIT=largemodel-control.service -f
 运行大模型
 ros2 launch ollama_ros_chat ollama_ros_chat.launch.py
 运行py脚本
