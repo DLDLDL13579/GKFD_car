@@ -152,25 +152,11 @@ class SystemManager(Node):
         self.status_interval = self.get_parameter("status_interval").value
 
         # 次车1 主车代规划参数
-        self.declare_parameter("subcar1_robot_radius", 0.20)
-        self.declare_parameter("subcar1_safety_margin", 0.10)
-        self.declare_parameter("subcar1_max_linear", 0.35)
-        self.declare_parameter("subcar1_min_linear", 0.08)
-        self.declare_parameter("subcar1_max_angular", 1.2)
-        self.declare_parameter("subcar1_lookahead", 0.35)
-        self.declare_parameter("subcar1_obstacle_stop", 0.35)
-        self.declare_parameter("subcar1_obstacle_slow", 0.8)
-        self.declare_parameter("subcar1_arrival_tol", 0.15)
+        # removed: self.declare_parameter("subcar1_min_linear", 0.08)
+        # removed: self.declare_parameter("subcar1_obstacle_slow", 0.8)
 
-        self.subcar1_radius  = self.get_parameter("subcar1_robot_radius").value
-        self.subcar1_margin  = self.get_parameter("subcar1_safety_margin").value
-        self.subcar1_max_v   = self.get_parameter("subcar1_max_linear").value
-        self.subcar1_min_v   = self.get_parameter("subcar1_min_linear").value
-        self.subcar1_max_w   = self.get_parameter("subcar1_max_angular").value
-        self.subcar1_look    = self.get_parameter("subcar1_lookahead").value
-        self.subcar1_stop_d  = self.get_parameter("subcar1_obstacle_stop").value
-        self.subcar1_slow_d  = self.get_parameter("subcar1_obstacle_slow").value
-        self.subcar1_arrive  = self.get_parameter("subcar1_arrival_tol").value
+        # removed: self.subcar1_min_v   = self.get_parameter("subcar1_min_linear").value
+        # removed: self.subcar1_slow_d  = self.get_parameter("subcar1_obstacle_slow").value
 
         # ── 进程管理 ──
         self.processes: dict[str, subprocess.Popen] = {}
@@ -215,15 +201,17 @@ class SystemManager(Node):
 
         # 次车1 状态订阅
         self.create_subscription(Odometry, "/robot_1/odom", self._r1_odom_cb, 10)
-        self.create_subscription(PoseWithCovarianceStamped, "/robot_1/soldier_pose", self._r1_soldier_pose_cb, 10)
+        r1_pose_qos = QoSProfile(depth=1, durability=DurabilityPolicy.VOLATILE)
+        self.create_subscription(PoseWithCovarianceStamped, "/robot_1/soldier_pose", self._r1_soldier_pose_cb, r1_pose_qos)
         self.create_subscription(BatteryState, "/robot_1/battery_state", self._r1_battery_state_cb, 10)
         self.create_subscription(Odometry, "/robot_2/odom", self._r2_odom_cb, 10)
-        self.create_subscription(PoseWithCovarianceStamped, "/robot_2/soldier_pose", self._r2_soldier_pose_cb, 10)
+        r2_pose_qos = QoSProfile(depth=1, durability=DurabilityPolicy.VOLATILE)
+        self.create_subscription(PoseWithCovarianceStamped, "/robot_2/soldier_pose", self._r2_soldier_pose_cb, r2_pose_qos)
         self.create_subscription(BatteryState, "/robot_2/battery_state", self._r2_battery_state_cb, 10)
 
         # 次车1 地图+激光
-        sub_car_map_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.create_subscription(OccupancyGrid, "/map", self._r1_map_cb, sub_car_map_qos)
+        #         sub_car_map_qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        #         self.create_subscription(OccupancyGrid, "/map", self._r1_map_cb, sub_car_map_qos)
         self.create_subscription(LaserScan, "/robot_1/scan", self._r1_scan_cb, 5)
 
         # ── TF ──
@@ -242,11 +230,6 @@ class SystemManager(Node):
         self._r2_state = self._new_robot_state()
 
         # ── 次车1 规划状态 ──
-        self._r1_map_msg: OccupancyGrid | None = None
-        self._r1_path: list[tuple[float, float]] = []
-        self._r1_wp_idx: int = 0
-        self._r1_front_obstacle: bool = False
-        self._r1_pp_timer = None
 
         # ── 定时器 ──
         self._status_timer = self.create_timer(self.status_interval, self._report_status)
@@ -337,7 +320,6 @@ class SystemManager(Node):
             # ── 次车1 指令 ──
             if topic.startswith("robot_1/"):
                 if topic == "robot_1/cancel_goal":
-                    self._stop_pp()
                     self._r1_cmd_pub.publish(Twist())
                     self._mqtt_pub("/status/info", {"msg": "subcar1 已取消路径并停车"})
                     return
@@ -347,10 +329,16 @@ class SystemManager(Node):
                     t.angular.z = float(data.get("angular_z", 0.0))
                     self._r1_cmd_pub.publish(t)
                 elif "goal_pose" in topic:
-                    self._plan_for_subcar_1(
-                        float(data.get("x", 0.0)),
-                        float(data.get("y", 0.0))
-                    )
+                    # 直接转发到小车1的 Nav2（不再本地规划）
+                    g = PoseStamped()
+                    g.header.stamp = self.get_clock().now().to_msg()
+                    g.header.frame_id = "map"
+                    g.pose.position.x = float(data.get("x", 0.0))
+                    g.pose.position.y = float(data.get("y", 0.0))
+                    g.pose.orientation.z = float(data.get("oz", 0.0))
+                    g.pose.orientation.w = float(data.get("ow", 1.0))
+                    self._r1_goal_pub.publish(g)
+                    self.get_logger().info(f"[robot_1] Forwarded goal: x={g.pose.position.x:.2f}, y={g.pose.position.y:.2f}")
                 elif "initialpose" in topic:
                     p = PoseWithCovarianceStamped()
                     p.header.stamp = self.get_clock().now().to_msg()
@@ -794,8 +782,8 @@ class SystemManager(Node):
         self._r2_state["battery_charging"] = bool(msg.power_supply_status == msg.POWER_SUPPLY_STATUS_CHARGING)
         self._r2_state["battery_ts"] = time.time()
 
-    def _r1_map_cb(self, msg: OccupancyGrid):
-        self._r1_map_msg = msg
+    # _r1_map_cb 已禁用（map 转发改由 map_relay.py 处理）
+    # def _r1_map_cb(self, msg: OccupancyGrid): pass
 
     def _r1_scan_cb(self, msg: LaserScan):
         if not msg.ranges:
@@ -811,168 +799,11 @@ class SystemManager(Node):
             if math.isfinite(r) and r < front_min:
                 front_min = r
         self._r1_front_min_dist = front_min
-        self._r1_front_obstacle = front_min < self.subcar1_stop_d
+        self._r1_front_obstacle = front_min < 0.35
 
     # ──────────────────────────────────────────
     #  次车1 主车代规划：A* + Pure Pursuit
     # ──────────────────────────────────────────
-    def _plan_for_subcar_1(self, goal_x: float, goal_y: float):
-        if self._r1_map_msg is None:
-            self._mqtt_pub("/status/error", {"error": "subcar1 map not available"})
-            return
-        sx, sy = self._r1_state["x"], self._r1_state["y"]
-        if sx == 0.0 and sy == 0.0 and self._r1_state["pose_source"] is None:
-            self._mqtt_pub("/status/error", {"error": "subcar1 pose unknown"})
-            return
-        path = self._astar(self._r1_map_msg, (sx, sy), (goal_x, goal_y))
-        if not path:
-            self._mqtt_pub("/status/error", {"error": "subcar1 A* 找不到路径"})
-            return
-        simplified = self._simplify_path(path, min_dist=0.2)
-        self._r1_path = simplified
-        self._r1_wp_idx = 0
-        self._mqtt_pub("/status/info", {"msg": f"subcar1 路径规划成功 ({len(simplified)} waypoints)"})
-        if self._r1_pp_timer is not None:
-            self.destroy_timer(self._r1_pp_timer)
-        self._r1_pp_timer = self.create_timer(0.2, self._r1_pp_tick)
-
-    @staticmethod
-    def _simplify_path(path, min_dist=0.2):
-        if len(path) < 3:
-            return path
-        out = [path[0]]
-        for p in path[1:-1]:
-            if math.hypot(p[0] - out[-1][0], p[1] - out[-1][1]) >= min_dist:
-                out.append(p)
-        out.append(path[-1])
-        return out
-
-    def _astar(self, grid_msg: OccupancyGrid, start_xy, goal_xy):
-        import heapq
-        info = grid_msg.info
-        w, h, res = info.width, info.height, info.resolution
-        ox, oy = info.origin.position.x, info.origin.position.y
-
-        def to_gx(x, y): return int((x - ox) / res), int((y - oy) / res)
-        def to_xy(gx, gy): return (gx * res + ox, gy * res + oy)
-        sx, sy = to_gx(*start_xy); gx, gy = to_gx(*goal_xy)
-        if not (0 <= sx < w and 0 <= sy < h and 0 <= gx < w and 0 <= gy < h):
-            return None
-        data = np.array(grid_msg.data, dtype=np.int8).reshape((h, w))
-        OBSTACLE = 50
-        if data[sy, sx] >= OBSTACLE or data[gy, gx] >= OBSTACLE:
-            return None
-
-        inflate_px = int(math.ceil((self.subcar1_radius + self.subcar1_margin) / res))
-        if inflate_px > 0:
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * inflate_px + 1, 2 * inflate_px + 1))
-            obst_mask = (data >= OBSTACLE).astype(np.uint8) * 255
-            dilated = cv2.dilate(obst_mask, kernel)
-            data = np.where(dilated > 0, np.int8(OBSTACLE), data).astype(np.int8)
-
-        neigh = [(-1,-1,1.414),(0,-1,1.0),(1,-1,1.414),
-                 (-1,0,1.0),(1,0,1.0),
-                 (-1,1,1.414),(0,1,1.0),(1,1,1.414)]
-
-        def h(ix, iy):
-            dx = abs(ix - gx); dy = abs(iy - gy)
-            return (max(dx, dy) - min(dx, dy)) * 1.0 + min(dx, dy) * 1.414
-
-        g_score = {(sx, sy): 0.0}; came = {}; closed = set()
-        open_heap = [(h(sx, sy), 0.0, (sx, sy))]
-        counter = 0
-        GOAL_TOL = 2
-
-        while open_heap:
-            _, _, cur = heapq.heappop(open_heap)
-            if cur in closed:
-                continue
-            closed.add(cur)
-            cx, cy = cur
-            if abs(cx - gx) <= GOAL_TOL and abs(cy - gy) <= GOAL_TOL:
-                rev = [cur]
-                while cur in came:
-                    cur = came[cur]; rev.append(cur)
-                rev.reverse()
-                return [to_xy(*p) for p in rev]
-            for dx, dy, cost in neigh:
-                nx, ny = cx + dx, cy + dy
-                if not (0 <= nx < w and 0 <= ny < h): continue
-                if (nx, ny) in closed: continue
-                if data[ny, nx] >= OBSTACLE: continue
-                if dx != 0 and dy != 0:
-                    if data[cy, cx + dx] >= OBSTACLE or data[cy + dy, cx] >= OBSTACLE:
-                        continue
-                ng = g_score[cur] + cost
-                if ng < g_score.get((nx, ny), float("inf")):
-                    g_score[(nx, ny)] = ng
-                    came[(nx, ny)] = cur
-                    counter += 1
-                    heapq.heappush(open_heap, (ng + h(nx, ny), counter, (nx, ny)))
-        return None
-
-    def _r1_pp_tick(self):
-        if not self._r1_path or self._r1_wp_idx >= len(self._r1_path):
-            self._r1_cmd_pub.publish(Twist())
-            self._stop_pp()
-            self._mqtt_pub("/status/info", {"msg": "subcar1 已到达目标点"})
-            return
-        cx, cy = self._r1_state["x"], self._r1_state["y"]
-        yaw = self._r1_state["yaw"]
-        if cx == 0.0 and cy == 0.0 and self._r1_state["pose_source"] is None:
-            return
-
-        while self._r1_wp_idx < len(self._r1_path):
-            wx, wy = self._r1_path[self._r1_wp_idx]
-            if math.hypot(wx - cx, wy - cy) < self.subcar1_arrive:
-                self._r1_wp_idx += 1
-            else:
-                break
-
-        if self._r1_wp_idx >= len(self._r1_path):
-            self._r1_cmd_pub.publish(Twist())
-            self._stop_pp()
-            self._mqtt_pub("/status/info", {"msg": "subcar1 已到达目标点"})
-            return
-
-        L = self.subcar1_look
-        target = self._r1_path[-1]
-        for i in range(self._r1_wp_idx, len(self._r1_path)):
-            wx, wy = self._r1_path[i]
-            if math.hypot(wx - cx, wy - cy) >= L:
-                target = (wx, wy); break
-
-        dx = target[0] - cx; dy = target[1] - cy
-        alpha = math.atan2(math.sin(math.atan2(dy, dx) - yaw),
-                           math.cos(math.atan2(dy, dx) - yaw))
-
-        v = self.subcar1_max_v
-        if abs(alpha) > math.radians(45):
-            v = self.subcar1_min_v
-        elif abs(alpha) > math.radians(20):
-            ratio = (math.radians(45) - abs(alpha)) / math.radians(25)
-            v = self.subcar1_min_v + (self.subcar1_max_v - self.subcar1_min_v) * ratio
-
-        front_d = getattr(self, "_r1_front_min_dist", float("inf"))
-        if front_d < self.subcar1_stop_d:
-            v = 0.0
-        elif front_d < self.subcar1_slow_d:
-            ratio = (front_d - self.subcar1_stop_d) / (self.subcar1_slow_d - self.subcar1_stop_d)
-            v = min(v, self.subcar1_min_v + (self.subcar1_max_v - self.subcar1_min_v) * ratio)
-
-        w = 2.0 * v * math.sin(alpha) / max(L, 0.05)
-        w = max(-self.subcar1_max_w, min(self.subcar1_max_w, w))
-
-        t = Twist()
-        t.linear.x = v; t.angular.z = w
-        self._r1_cmd_pub.publish(t)
-
-    def _stop_pp(self):
-        if self._r1_pp_timer is not None:
-            self.destroy_timer(self._r1_pp_timer)
-            self._r1_pp_timer = None
-        self._r1_path = []; self._r1_wp_idx = 0
-
     # ──────────────────────────────────────────
     #  地图更新
     # ──────────────────────────────────────────
@@ -1034,7 +865,6 @@ free_thresh: 0.19
 
     def shutdown(self):
         self.get_logger().info("Shutting down SystemManager...")
-        self._stop_pp()
         for target in list(self.processes.keys()):
             self._handle_feature_cmd("stop", target, {})
         self.mqtt.loop_stop()

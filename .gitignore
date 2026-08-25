@@ -8,6 +8,8 @@ __pycache__/
 *.bag
 *.db
 *.tgz
+*.docx
+*.bak.*
 combined_files.txt
 collect_files.sh
 src/wheeltec_mic_aiui/AIUI/msc/

@@ -1,0 +1,25 @@
+name: robot1_domain_bridge
+from_domain: 11
+to_domain: 1
+
+topics:
+  /robot_1/soldier_pose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+
+  /robot_1/odom:
+    type: nav_msgs/msg/Odometry
+
+  /robot_1/battery_state:
+    type: sensor_msgs/msg/BatteryState
+
+  /robot_1/cmd_vel:
+    type: geometry_msgs/msg/Twist
+    reversed: true
+
+  /robot_1/goal_pose:
+    type: geometry_msgs/msg/PoseStamped
+    reversed: true
+
+  /robot_1/initialpose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    reversed: true
