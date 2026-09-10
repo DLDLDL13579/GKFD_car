@@ -23,3 +23,23 @@ topics:
   /robot_2/initialpose:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     reversed: true
+
+  # ---- 上行: 导航调试(RViz 可视化) ----
+  /robot_2/tf_relay:
+    type: tf2_msgs/msg/TFMessage
+  /robot_2/map:
+    type: nav_msgs/msg/OccupancyGrid
+    qos:
+      reliability: reliable
+      durability: transient_local
+      depth: 1
+  /robot_2/scan:
+    type: sensor_msgs/msg/LaserScan
+  /robot_2/amcl_pose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    qos:
+      reliability: reliable
+      durability: transient_local
+      depth: 1
+  /robot_2/plan:
+    type: nav_msgs/msg/Path

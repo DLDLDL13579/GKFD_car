@@ -1,25 +1,34 @@
 name: robot1_domain_bridge
-from_domain: 11
+from_domain: 21
 to_domain: 1
 
 topics:
+  # ---- 上行: 多机协同(robot1 → 主车) ----
   /robot_1/soldier_pose:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-
   /robot_1/odom:
     type: nav_msgs/msg/Odometry
-
   /robot_1/battery_state:
     type: sensor_msgs/msg/BatteryState
-
-  /robot_1/cmd_vel:
-    type: geometry_msgs/msg/Twist
-    reversed: true
-
-  /robot_1/goal_pose:
-    type: geometry_msgs/msg/PoseStamped
-    reversed: true
-
-  /robot_1/initialpose:
+  # ---- 上行: 导航调试(RViz 可视化) ----
+  /tf:
+    type: tf2_msgs/msg/TFMessage
+  /robot_1/map:
+    type: nav_msgs/msg/OccupancyGrid
+    qos:
+      reliability: reliable
+      durability: transient_local
+      depth: 1
+  /robot_1/scan:
+    type: sensor_msgs/msg/LaserScan
+  /robot_1/amcl_pose:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: true
+    qos:
+      reliability: reliable
+      durability: transient_local
+      depth: 1
+  /robot_1/plan:
+    type: nav_msgs/msg/Path
+
+  /tf_static:
+    type: tf2_msgs/msg/TFMessage

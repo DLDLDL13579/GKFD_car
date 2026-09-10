@@ -25,6 +25,8 @@ import os
 import time
 import signal
 import threading
+from action_msgs.srv import CancelGoal
+from action_msgs.msg import GoalInfo
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 
@@ -185,6 +187,7 @@ class SystemManager(Node):
 
         self._r1_cmd_pub = self.create_publisher(Twist, "/robot_1/cmd_vel", 10)
         self._r1_goal_pub = self.create_publisher(PoseStamped, "/robot_1/goal_pose", 10)
+        self._r1_nav_cancel_cli = self.create_client(CancelGoal, "/robot_1/navigate_to_pose/_action/cancel_goal")
         self._r1_initpose_pub = self.create_publisher(PoseWithCovarianceStamped, "/robot_1/initialpose", 10)
         self._r2_cmd_pub = self.create_publisher(Twist, "/robot_2/cmd_vel", 10)
         self._r2_goal_pub = self.create_publisher(PoseStamped, "/robot_2/goal_pose", 10)
@@ -237,6 +240,12 @@ class SystemManager(Node):
         self._ros_poll_timer = self.create_timer(5.0, self._poll_ros_nodes)
         self._initial_poll_done = False
 
+        # ── 设备在线探测（TCP:22，独立于 ROS 数据流；sshd=运维命脉，语义=设备在线）──
+        self._probe_targets = {"robot_1": "192.168.31.235", "robot_2": "192.168.31.91"}
+        self._net_online = {rid: False for rid in self._probe_targets}
+        self._probe_fails = {rid: 0 for rid in self._probe_targets}
+        threading.Thread(target=self._probe_loop, daemon=True).start()
+
         self.get_logger().info(
             f"SystemManager started — prefix={self.prefix}, broker={self.broker}:{self.port}"
         )
@@ -249,7 +258,7 @@ class SystemManager(Node):
         return {
             "x": 0.0, "y": 0.0, "yaw": 0.0,
             "pose_source": None, "pose_ts": 0.0,
-            "vx": 0.0, "vz": 0.0,
+            "vx": 0.0, "vz": 0.0, "odom_ts": 0.0,
             "battery_voltage": None, "battery_current": None,
             "battery_soc": None, "battery_charging": None,
             "battery_status": None, "battery_health": None,
@@ -320,6 +329,14 @@ class SystemManager(Node):
             # ── 次车1 指令 ──
             if topic.startswith("robot_1/"):
                 if topic == "robot_1/cancel_goal":
+                    # 真正取消 Nav2 目标：空 GoalInfo = 取消全部活动目标
+                    req = CancelGoal.Request()
+                    req.goal_info = GoalInfo()
+                    if self._r1_nav_cancel_cli.service_is_ready():
+                        self._r1_nav_cancel_cli.call_async(req)
+                        self.get_logger().info("[robot_1] NavigateToPose cancel requested.")
+                    else:
+                        self.get_logger().warn("[robot_1] cancel service unavailable, only zero-twist stop.")
                     self._r1_cmd_pub.publish(Twist())
                     self._mqtt_pub("/status/info", {"msg": "subcar1 已取消路径并停车"})
                     return
@@ -460,6 +477,32 @@ class SystemManager(Node):
     def _watchdog_check(self):
         pass
 
+    # ──────────────────────────────────────────
+    #  设备在线探测（daemon 线程，不阻塞 rclpy 主循环）
+    # ──────────────────────────────────────────
+    PROBE_INTERVAL = 5.0          # 探测间隔(s)
+    PROBE_TIMEOUT = 1.0           # 单次 TCP 连接超时(s)
+    PROBE_FAILS_TO_OFFLINE = 2    # 连续失败 N 次才判离线（防 WiFi 抖动）
+
+    def _probe_loop(self):
+        import socket
+        while True:
+            for rid, ip in self._probe_targets.items():
+                try:
+                    s = socket.create_connection((ip, 22), timeout=self.PROBE_TIMEOUT)
+                    s.close()
+                    if not self._net_online[rid]:
+                        self.get_logger().info(f"[probe] {rid}({ip}) 设备上线")
+                    self._net_online[rid] = True
+                    self._probe_fails[rid] = 0
+                except OSError:
+                    self._probe_fails[rid] += 1
+                    if self._probe_fails[rid] >= self.PROBE_FAILS_TO_OFFLINE and self._net_online[rid]:
+                        self._net_online[rid] = False
+                        self.get_logger().warn(
+                            f"[probe] {rid}({ip}) 设备离线（连续{self._probe_fails[rid]}次探测失败）")
+            time.sleep(self.PROBE_INTERVAL)
+
     def _poll_ros_nodes(self):
         slam_proc_running = nav_proc_running = False
         try:
@@ -486,6 +529,8 @@ class SystemManager(Node):
         for line in out:
             node = line.strip()
             if not node:
+                continue
+            if node.startswith("/robot_"):
                 continue
             feat = ROS_NODE_TO_FEATURE.get(node)
             if feat:
@@ -561,7 +606,7 @@ class SystemManager(Node):
             vx=self._odom_vx, vz=self._odom_vz,
             bat_voltage=self._battery, bat_soc=None, bat_current=None,
             bat_charging=self._charging, bat_status=1 if self._charging else 2, bat_health=1,
-            pose_source="tf",
+            pose_source="tf", pose_ts=time.time(), odom_ts=time.time(),
         )
         # robot_1 = 次车1
         r1 = self._build_robot_entry(
@@ -575,6 +620,7 @@ class SystemManager(Node):
             bat_status=self._r1_state["battery_status"],
             bat_health=self._r1_state["battery_health"],
             pose_source=self._r1_state["pose_source"],
+            pose_ts=self._r1_state["pose_ts"], odom_ts=self._r1_state["odom_ts"],
         )
         # robot_2 = 次车2
         r2 = self._build_robot_entry(
@@ -588,6 +634,7 @@ class SystemManager(Node):
             bat_status=self._r2_state["battery_status"],
             bat_health=self._r2_state["battery_health"],
             pose_source=self._r2_state["pose_source"],
+            pose_ts=self._r2_state["pose_ts"], odom_ts=self._r2_state["odom_ts"],
         )
 
         robots = [main_robot, r1, r2]
@@ -615,12 +662,24 @@ class SystemManager(Node):
         vx: float, vz: float,
         bat_voltage, bat_soc, bat_current, bat_charging,
         bat_status, bat_health, pose_source,
+        pose_ts: float = 0.0, odom_ts: float = 0.0,
     ) -> dict:
-        has_pose = pose_source is not None and not (x == 0.0 and y == 0.0)
+        now = time.time()
+        # 位姿：>5s 未更新视为无位姿（原点是合法位姿，不再做 (0,0) 特判）
+        has_pose = pose_source is not None and pose_ts > 0.0 and (now - pose_ts) < 5.0
         has_bat  = bat_voltage is not None
-        online   = has_bat  # 有电量数据就算在线
 
-        entry: dict = {"id": robot_id, "online": online}
+        # 设备在线：robot_0=本机恒在线；次车=TCP:22 探测结果（与 ROS 数据流解耦）
+        # 导航栈在跑：robot_0=nav2 进程轮询；次车=/robot_N/odom 新鲜 <3s
+        #   （robot1 odom 18Hz 来自底盘驱动、与导航同服务；狗 odom 10Hz 来自 FAST-LIO 经适配器）
+        if robot_id == "robot_0":
+            online = True
+            nav_running = self.process_status.get("nav2") == "running"
+        else:
+            online = self._net_online.get(robot_id, False)
+            nav_running = odom_ts > 0.0 and (now - odom_ts) < 3.0
+
+        entry: dict = {"id": robot_id, "online": online, "nav_running": nav_running}
 
         # pose / velocity：始终输出，缺数据填 null
         if has_pose:
@@ -757,10 +816,12 @@ class SystemManager(Node):
     def _r1_odom_cb(self, msg: Odometry):
         self._r1_state["vx"] = msg.twist.twist.linear.x
         self._r1_state["vz"] = msg.twist.twist.angular.z
+        self._r1_state["odom_ts"] = time.time()
 
     def _r2_odom_cb(self, msg: Odometry):
         self._r2_state["vx"] = msg.twist.twist.linear.x
         self._r2_state["vz"] = msg.twist.twist.angular.z
+        self._r2_state["odom_ts"] = time.time()
 
     def _r1_battery_state_cb(self, msg: BatteryState):
         soc_pct = (msg.percentage * 100.0) if msg.percentage is not None else None
