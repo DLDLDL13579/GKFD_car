@@ -13,6 +13,8 @@ topics:
   # ---- 上行: 导航调试(RViz 可视化) ----
   /tf:
     type: tf2_msgs/msg/TFMessage
+    qos:
+      reliability: best_effort
   /robot_1/map:
     type: nav_msgs/msg/OccupancyGrid
     qos:
