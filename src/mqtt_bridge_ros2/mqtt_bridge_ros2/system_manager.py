@@ -141,7 +141,7 @@ class SystemManager(Node):
     def __init__(self):
         super().__init__("system_manager")
 
-        self.declare_parameter("mqtt_broker", "192.168.31.175")
+        self.declare_parameter("mqtt_broker", "localhost")
         self.declare_parameter("mqtt_port", 1883)
         self.declare_parameter("mqtt_client_id", "jetson_robot")
         self.declare_parameter("topic_prefix", "robot_0")
@@ -508,14 +508,14 @@ class SystemManager(Node):
         try:
             ps_out = subprocess.check_output(
                 ["bash", "-c",
-                 "ps -eo pid,cmd | grep -E 'largemodel_(slam|nav)\\.launch\\.py'"
+                 "ps -eo pid,cmd | grep -E 'largemodel_(slam|nav[a-z_]*)\\.launch\\.py'"
                  " | grep -v 'grep' | grep -v 'bash -c' || true"],
                 stderr=subprocess.DEVNULL, timeout=2,
             ).decode(errors="ignore")
             for line in ps_out.splitlines():
                 if "largemodel_slam.launch.py" in line.lower():
                     slam_proc_running = True
-                if "largemodel_nav.launch.py" in line.lower():
+                if "largemodel_nav" in line.lower():
                     nav_proc_running = True
         except Exception:
             pass

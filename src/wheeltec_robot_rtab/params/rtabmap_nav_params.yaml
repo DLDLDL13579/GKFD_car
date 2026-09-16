@@ -19,15 +19,15 @@ amcl:
     laser_model_type: "likelihood_field" #使用哪种模型，
     #beam、likelihood_field 或 unlikely_field_prob。与 unlikely_field 相同，但如果启用，则包含 beamskip 功能
     max_beams: 60                   #更新过滤器时每次扫描要使用多少个均匀分布的光束。
-    max_particles: 2000             #允许的最大粒子数
-    min_particles: 500              #允许的最小粒子数
+    max_particles: 5000             #允许的最大粒子数
+    min_particles: 1000              #允许的最小粒子数
     odom_frame_id: "odom_combined"  #使用哪个框架进行里程计
     pf_err: 0.02                    #粒子过滤器群体误差
     pf_z: 0.85                      #粒子过滤器群体密度
-    recovery_alpha_fast: 0.0        #快速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
-    recovery_alpha_slow: 0.0        #慢速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
+    recovery_alpha_fast: 0.1        #快速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
+    recovery_alpha_slow: 0.001        #慢速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
     resample_interval: 2            #重采样之前所需的过滤器更新次数
-    robot_model_type: "nav2_amcl::DifferentialMotionMode" #插件类的完全限定类型。
+    robot_model_type: "nav2_amcl::DifferentialMotionModel" #插件类的完全限定类型。
     #选项为“nav2_amcl::DifferentialMotionModel”和“nav2_amcl::OmniMotionModel”。
 
     save_pose_rate: 0.5             #将最后估计的姿势和协方差存储到参数服务器的最大速率（Hz）
