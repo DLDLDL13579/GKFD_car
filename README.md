@@ -1,6 +1,10 @@
 # 🤖 GKFD_car — 轮趣机器人 ROS2 Humble 综合开发平台
 
-![ROS2](https://img.shields.io/badge/ROS2-Humble-blue) ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-orange) ![Platform](https://img.shields.io/badge/Platform-Jetson%20%7C%20x86-brightgreen) ![License](https://img.shields.io/badge/License-MIT-green) [![GitHub Repo](https://img.shields.io/badge/GitHub-GKFD__car-181717?logo=github)](https://github.com/DLDLDL13579/GKFD_car)
+![ROS2](https://img.shields.io/badge/ROS2-Humble-blue) ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-orange) ![Platform](https://img.shields.io/badge/Platform-Jetson%20%7C%20x86-brightgreen) ![License](https://img.shields.io/badge/License-%E8%A7%81%E5%90%84%E5%8C%85%20package.xml-lightgrey) [![GitHub Repo](https://img.shields.io/badge/GitHub-GKFD__car-181717?logo=github)](https://github.com/DLDLDL13579/GKFD_car)
+
+> **关于许可证**：本仓库根目录**没有 LICENSE 文件**，各包的授权状态以 `package.xml` 中的
+> `<license>` 字段为准（部分为 `TODO: License declaration`，即尚未确定）。
+> 仓库内还包含多个**上游第三方包**，其权利归各自原作者所有。详见文末 [归属与许可证](#归属与许可证)。
 
 ---
 
@@ -75,6 +79,69 @@
 ---
 
 ## 🏗️ 项目架构
+
+### 数据流与功能分层
+
+```mermaid
+graph TB
+    subgraph SENSE["感知层"]
+        LIDAR["wheeltec_lidar_ros2<br/>激光雷达"]
+        IMU["wheeltec_imu"]
+        CAM["realsense-ros / ros2_astra_camera<br/>usb_cam-ros2"]
+        GPS["wheeltec_gps"]
+        MIC["wheeltec_mic / wheeltec_mic_aiui"]
+        JOY["wheeltec_joy"]
+    end
+
+    subgraph BASE["底盘层"]
+        BRINGUP["turn_on_wheeltec_robot<br/>底盘驱动 + URDF"]
+        URDF["wheeltec_robot_urdf"]
+    end
+
+    subgraph SLAM["建图层"]
+        RTAB["wheeltec_robot_rtab<br/>RTAB-Map"]
+        SLAMTB["wheeltec_slam_toolbox"]
+        CARTO["wheeltec_cartographer"]
+        GMAP["wheeltec_robot_slam<br/>Gmapping / ORB-SLAM2"]
+    end
+
+    subgraph NAV["导航层"]
+        NAV2["navigation2-humble<br/>+ wheeltec_robot_nav2"]
+        RRT["rrt_exploration<br/>+ wheeltec_robot_rrt2"]
+        FOLLOW["wheeltec_path_follow<br/>wheeltec_robot_kcf<br/>simple_follower_ros2"]
+    end
+
+    subgraph INTELL["智能层"]
+        BT["bt_plugins<br/>行为树节点"]
+        ARUCO["aruco_ros<br/>二维码定位"]
+        DNN["dnn_detect"]
+        LLM["ollama_ros_chat<br/>本地大模型"]
+        TTS["tts_make_ros2"]
+        CHARGE["auto_recharge_ros2<br/>自动回充"]
+        WAYPOINT["nav2_waypoint_cycle"]
+    end
+
+    subgraph LINK["对外接口"]
+        MQTT["mqtt_bridge_ros2"]
+        WEB["web_video_server-ros2"]
+        DASH["dashboard.html"]
+    end
+
+    BASE --> SENSE
+    SENSE --> SLAM
+    SLAM --> NAV
+    BASE --> NAV
+    NAV --> INTELL
+    ARUCO --> BT
+    DNN --> BT
+    LLM --> TTS
+    INTELL --> MQTT
+    MQTT --> DASH
+    CAM --> WEB
+    WEB --> DASH
+```
+
+### 源码目录树
 
 ```
 wheeltec_ros2/
@@ -672,17 +739,43 @@ ros2 run bt_plugins list_nodes  # (如可用)
 
 ---
 
-## 📄 License
+## 📄 归属与许可证
 
-本项目基于 **MIT License** 开源。
+### 现状说明
 
-- 核心导航框架 (Nav2、Cartographer 等) 遵循其各自开源协议
-- 轮趣科技 (Wheeltec) 底层驱动相关代码版权归原厂商所有
-- 用户自己的二次开发代码遵循 MIT License
+⚠️ **本仓库根目录没有 `LICENSE` 文件**，因此**不声明统一的项目许可证**。
+各包的授权状态以各自 `package.xml` 中的 `<license>` 字段为准：
 
----
+| 包 | `package.xml` 中的声明 |
+|---|---|
+| `mqtt_bridge_ros2` | `MIT` |
+| `tts_make_ros2` | `Apache-2.0` |
+| `largemodel` | `TODO: License declaration`（**尚未确定**） |
+| `auto_recharge_ros2` | `TODO: License declaration`（**尚未确定**） |
+| `nav2_waypoint_cycle` | `TODO: License declaration`（**尚未确定**） |
+| `simple_follower_ros2` | `TODO: License declaration`（**尚未确定**） |
+| `wheeltec_robot_rtab` | `TODO: License declaration`（**尚未确定**） |
+| `usb_cam-ros2` | `BSD` |
 
-## 🙏 致谢
+> 建议：若要对外声明 MIT，请补充根目录 `LICENSE` 文件，并把各包 `package.xml`
+> 中的 `TODO: License declaration` 补全，避免分发时产生授权歧义。
+
+### 上游第三方包（权利归原作者）
+
+本工作区包含多个**直接引入的上游开源包与厂商 SDK**，这些内容**不是本项目原创**：
+
+| 包 / 目录 | 来源与归属 |
+|---|---|
+| `navigation2-humble/` | [ROS 2 Navigation2](https://github.com/ros-planning/navigation2)（Apache-2.0） |
+| `realsense-ros/` | [IntelRealSense/realsense-ros](https://github.com/IntelRealSense/realsense-ros)（Apache-2.0） |
+| `aruco_ros-humble-devel/` | [Aruco ROS](https://github.com/pal-robotics/aruco_ros)（BSD，仓库内附独立 LICENSE） |
+| `usb_cam-ros2/` | [ros-drivers/usb_cam](https://github.com/ros-drivers/usb_cam)（BSD） |
+| `web_video_server-ros2/` | [RobotWebTools/web_video_server](https://github.com/RobotWebTools/web_video_server)（BSD） |
+| `wheeltec_*`（底盘、雷达、IMU、麦克风、GPS、KCF、URDF、导航配置等） | **轮趣科技（Wheeltec）** 厂商 SDK，版权归原厂商所有 |
+| `ros2_astra_camera/` | Orbbec Astra 相机 ROS2 驱动 |
+| `auto_recharge_ros2`、`rrt_exploration` 等 | 参考社区开源实现 |
+
+### 致谢
 
 - [轮趣科技 (Wheeltec)](https://www.wheeltec.net/) — 底盘硬件与底层 SDK
 - [ROS2 Navigation2](https://github.com/ros-planning/navigation2) — 导航框架
