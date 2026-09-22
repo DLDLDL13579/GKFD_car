@@ -15,6 +15,36 @@
 
 ---
 
+## 〇、当日订正（现行有效）（2026-09-20）
+
+> 本节汇总 2026-09-18 ~ 2026-09-20 的**坐标系统一**工作，**现行有效**；正文对应位置已同步改写并标 `←订正2026-09-20`。历史记录一律保留。
+
+**一句话结论**：主车导航主链路由 AMCL 回退为 **RTAB-Map**；主车与机械狗的二维栅格地图、三维点云地图、定位数据库**已统一到同一坐标系**，两车各自使用各自的点云与数据库，却输出同一坐标系下的位姿。
+
+| # | 订正项 | 现行值 |
+|---|---|---|
+| 1 | 默认导航主线 | **RTAB-Map**（`largemodel_nav.launch.py`）；AMCL 降为可切换备用（`bash ~/start_nav.sh amcl`） |
+| 2 | 语音链路起的栈 | `action_service.py:1046` = `largemodel_nav.launch.py`（`src` 与 `install` 两份同步） |
+| 3 | 当前地图 `my_map.*` | **融合图** 1380×910 @0.05m，origin `[-12.812, -15.218]`，未知区 0% |
+| 4 | 融合图来源 | 机械狗新图与主车 RTAB 建图配准融合：旋转 14.50°、平移 (0.00, -0.10)；车墙到狗墙中位距离 5.0 cm，容忍 20 cm 时重合 93.1% |
+| 5 | `my_room.db` | 已做坐标系变换：170 个节点位姿左乘变换矩阵，静态验证 100% 落在融合图自由区 |
+| 6 | AMCL 定位崩溃 | **已根治**（09-18）：根因是地图未知区占比过高致匹配场塌陷；修复后当日 11 次崩溃归零 |
+| 7 | CPU 隔离 | 保持：`amcl` 绑核 4,5；`nav2_container` 绑核 0,1,2 |
+| 8 | 旧发车点 | `(1.510, 4.350)` 与 `(0.763, -2.143)` **均已作废**（车不在图覆盖区内，需重测） |
+
+**本轮备份**：`my_map.pgm/yaml.bak_carmap_20260918`、`my_map.pgm/yaml.bak_dogmap_20260918`、`my_room.db.bak_before_coordfix_20260918`、`action_service.py.bak_rtab_rollback_20260918`
+
+---
+
+## 📋 订正表
+
+| 日期 | 订正范围 | 要点 |
+|---|---|---|
+| 2026-09-17 | 定位链路改造 | 引入 AMCL 主线：`start_nav.sh` 切换器、`largemodel_nav_amcl.launch.py` |
+| **2026-09-20** | **坐标系统一** | **主链路由 AMCL 回退 RTAB；融合图启用为 `my_map.*`；`my_room.db` 坐标系变换；机械狗端 PCD 切换至新图** |
+
+---
+
 ## 📋 目录
 
 - [核心技术栈](#-核心技术栈)
@@ -34,7 +64,7 @@
 | 层级 | 技术 | 说明 |
 |------|------|------|
 | **建图** | RTAB-Map / Cartographer / SLAM Toolbox / Gmapping / ORB-SLAM2 | 2D 激光 + 3D RGB-D 混合 SLAM |
-| **定位** | AMCL (自适应蒙特卡洛定位) | 基于粒子滤波的 2D 概率定位 |
+| **定位** | RTAB-Map 重定位（默认主线）+ AMCL（可切换备用） | RTAB-Map 视觉-激光重定位为默认主线；AMCL 粒子滤波 2D 定位完整保留、可一键切换 ←订正2026-09-20 |
 | **导航** | Nav2 (Navigation2) | 全局/局部路径规划 + 动态避障 |
 | **探索** | RRT (Rapidly-exploring Random Tree) | 前沿边界自主探索 + Mean Shift 聚类 |
 | **任务编排** | Behavior Trees (行为树) | 视觉寻物 → 靠近 → 机械臂抓取完整闭环 |
@@ -232,7 +262,7 @@ wheeltec_ros2/
 
 | 包名 | 功能 |
 |------|------|
-| `navigation2-humble` | Nav2 完整框架: AMCL 定位 + 全局/局部规划 + 行为树导航 |
+| `navigation2-humble` | Nav2 完整框架: 全局/局部规划 + 行为树导航；定位由 RTAB-Map 承担（默认主线），AMCL 可切换备用 ←订正2026-09-20 |
 | `wheeltec_robot_nav2` | Nav2 参数配置与 launch 封装 |
 | `rrt_exploration` | **RRT 前沿探索**核心算法: Global RRT + Local RRT + Mean Shift 聚类 |
 | `wheeltec_robot_rrt2` | RRT 探索启动配置与 Nav2 集成 |
@@ -475,8 +505,8 @@ ros2 launch wheeltec_robot_slam orb_slam2.launch.py
 # 终端 1: 启动底盘
 ros2 launch turn_on_wheeltec_robot turn_on_wheeltec_robot.launch.py
 
-# 终端 2: 启动 RTAB-Map 导航 (含 AMCL 定位)
-ros2 launch wheeltec_robot_rtab wheeltec_nav2_rtab.launch.py
+# 终端 2: 启动导航 —— 主车默认主线为 RTAB，用一键切换器（见下）
+bash ~/start_nav.sh rtab          # ←订正2026-09-20（09-18 起由 AMCL 回退 RTAB）
 
 # 终端 3: 在 Rviz2 中点击 "Nav2 Goal" 下发目标点
 ```
@@ -484,6 +514,46 @@ ros2 launch wheeltec_robot_rtab wheeltec_nav2_rtab.launch.py
 - 机器人在 Rviz2 中自动定位
 - 支持动态避障、代价地图更新
 - 可在导航过程中切换全局规划器
+
+---
+
+#### 🧭 主车导航链路：RTAB 主线 + AMCL 备用（←订正2026-09-20）
+
+> **链路变更记录**：2026-09-17 曾以 AMCL 为主线；**2026-09-18 起回退为 RTAB 主线**（语音与前端链路随之走 RTAB），AMCL 完整保留、可一键切换。
+
+主车提供**一键切换**（两套互斥 —— 都会发布 `map→odom`，切换会先清干净旧栈）：
+
+```bash
+bash ~/start_nav.sh rtab     # RTAB + my_room.db（主线；语音/前端控制链路走此栈）←订正2026-09-20
+bash ~/start_nav.sh amcl     # AMCL + my_map.yaml（备用 / 可切回）
+bash ~/start_nav.sh status   # 查看当前跑哪套
+```
+
+`rtab` 分支起 `largemodel_nav.launch.py`（rtabmap 重定位 + `my_room.db`）。
+
+`amcl` 分支自动完成：**清旧栈**（组件进程 + launch 残留都要清；只 kill launch 会留下容器子进程，导致新栈报 `Failed to change state for node: controller_server`）→ 起 `largemodel_nav_amcl.launch.py` → 校验 `lifecycle active` / AMCL 收到激光 / 打印**实际加载的地图** → 全局定位给出初始位姿。
+
+**语音链路起的栈**（`action_service.py:1046`）已于 2026-09-18 由 `largemodel_nav_amcl.launch.py` 改回 **`largemodel_nav.launch.py`**；建图与保存链路本就为 RTAB（`largemodel_slam.launch.py`，默认 `Localization=false` 带 `-d` 删库重建）。←订正2026-09-20
+
+**地图闭环**（语音建图结束后，RTAB / AMCL 均无需配置改动即可使用）：
+
+```
+语音"结束建图" → map_saver_cli -f .../wheeltec_robot_rtab/my_map → my_map.pgm + my_map.yaml（+ my_room.db）
+RTAB / AMCL 导航 → 加载同一份 my_map.yaml
+```
+
+**当前地图（←订正2026-09-20）**：`my_map.*` = **融合图**，1380×910 @0.05m，origin `[-12.812, -15.218]`，未知区 0%。它由「机械狗新建图」与「主车 RTAB 建图」配准融合而成：旋转 14.50°、平移 (0.00, -0.10)，配准后车墙到狗墙中位距离 5.0 cm、容忍 20 cm 时重合 93.1%。**主车与机械狗现已处于同一坐标系**，两车各自使用各自的点云与定位数据库。`my_room.db` 已做坐标系变换（170 个节点位姿左乘变换矩阵）以对齐该图。
+
+**常用操作**：
+
+```bash
+export RMW_FASTRTPS_USE_SHM=false    # ⚠️ 所有 CLI / 脚本都要带（与 launch 一致），否则可能卡住
+python3 ~/lgm.py                     # 全局定位：自动从 my_map.yaml 读地图参数，输出初始位姿
+python3 ~/sip_arg.py <x> <y> <yaw>   # 设初始位姿（或 RViz 点 2D Pose Estimate）
+python3 ~/check_scan.py              # 双 QoS 激光探针
+```
+
+⚠️ **改 launch 必须 `src` 与 `install` 两份同步**（`install/` 是实体文件不是软链，否则 `ros2 launch` 仍跑旧版）。
 
 ---
 
@@ -736,6 +806,53 @@ ros2 run bt_plugins list_nodes  # (如可用)
 # 确认 XML 文件中的节点名称与 C++ 注册名称一致
 # 检查 wheeltec_rrt_msg 是否已编译
 ```
+
+### Q7: Nav2 报 `Extrapolation Error`，且 `Requested time` 一直不变（←新增2026-09-17）
+
+**真因是上游定位节点已死**（AMCL 崩溃），**不是 TF 配置问题**。TF 缓存是滚动窗口，节点死后旧时间戳被挤出窗口，于是持续报错。
+
+```bash
+grep -a "process has died" ~/nav_amcl*.log    # 应能看到 exit code -11
+bash ~/start_nav.sh amcl                       # 重起 AMCL 栈
+```
+
+**←订正2026-09-20：该崩溃已根治，根因不是参数也不是 CPU。** 真因是**地图未知区占比过高**（实测 87.4%）——`map_server` 把 PGM 的 205 判为 `OccupancyGrid` 的 -1，而 AMCL 只把 `data==100` 当障碍，于是未知区等于「此处没有墙」，似然场塌陷、粒子权重归零后 SIGSEGV。修复要领：**地图未知区必须为 0%**（区域外要么用真实墙体、要么标为占用）。修图 + CPU 隔离（`amcl` 绑核 4,5、`nav2_container` 绑核 0,1,2）后，当日 11 次崩溃归零，五个标记点全部跑通。
+
+### Q8: `/scan` 有 publisher 但收不到数据（←新增2026-09-17）
+
+两种可能，用**双 QoS 探针**区分：
+
+```bash
+python3 ~/check_scan.py     # reliable / best_effort 都收不到 ⇒ 发布端真没数据
+```
+
+- **真没数据**：雷达串口失效（USB 重新枚举后驱动仍捏着失效的 fd）→ `systemctl --user restart largemodel-control`
+- **只有一种 QoS 收到**：QoS 不匹配，检查订阅端配置
+
+另：控制栈启动后若雷达/底盘节点缺失、`action_service` 刷"传感器数据异常: 相机, 雷达, 里程计"，也是同一类问题（串口枚举比服务启动晚，服务 `ExecStartPre` 只等麦克风不等串口）→ 同样重启 control 服务。
+
+### Q9: 所有导航目标都被 REJECTED（←新增2026-09-17）
+
+大概率**误删过 `/dev/shm/fastrtps_*`**，破坏了 FastDDS 共享内存状态。**症状特征**：外部进程之间通信正常（`topic echo /scan` 有数据），但"外部 ↔ 容器内节点"不通（`topic echo /amcl_pose` 为空、CLI `action send_goal` 卡住）—— 而 AMCL 恰在容器里。
+
+```bash
+systemctl --user restart largemodel-control    # 1) 重启 control 栈
+bash ~/start_nav.sh amcl                       # 2) 再重起 nav2 栈（不必重启整机）
+# 判据：AMCL 日志重新出现 createLaserObject
+```
+
+**←订正2026-09-20**：此处原记作「绝对不要删」，说法过于绝对。恰当规则是 **只在所有 ROS 进程停止时清理** —— 先停 control 栈与 nav2 栈 → 再删 → 再依次起 control、nav2；运行中直接删会破坏 FastDDS 共享内存状态，症状见本节上文。
+
+### Q10: 导航目标无法完成（原地不动 / 反复原地转向）（←新增2026-09-17）
+
+查 `~/nav_amcl*.log`：
+
+- `Failed to make progress` ⇒ 车在终点附近**原地对姿**、位移不足，被 `progress_checker` 判为卡死（当前 `required_movement_radius: 0.25` / `movement_time_allowance: 20.0`）
+- **麦轮底盘务必用 `robot_model_type: nav2_amcl::OmniMotionModel`** —— 用差速模型会导致末端对姿反复失败（实测同一点位从"超时 150 s"变为"26.6 s 到达"）
+- `xy_goal_tolerance` 不要小于车的实际控制精度（实测 2.4~5.9 cm，当前设 **0.10** 留余量；曾收到 0.05 导致永远判不了到达）
+- **`use_respawn` 对容器内组件无效** —— AMCL 崩了不会被自动拉起，需要独立看门狗
+
+**←订正2026-09-20：该问题已解决，不再是「已知未解」**。2026-09-17 记录的「CPU 过载」线索只是伴随现象；真正根因是**地图未知区占比过高致匹配场塌陷**（详见 Q7 订正段）。已于 09-18 修复：地图未知区归零 + CPU 隔离 + 粒子数降至 2000/500 + 放宽定位更新阈值，当日 11 次崩溃归零。AMCL 现保留为可切换备用链路，主线为 RTAB-Map。
 
 ---
 
