@@ -226,6 +226,7 @@ class SystemManager(Node):
         self._odom_vx = 0.0; self._odom_vz = 0.0
         self._odom_yaw = 0.0
         self._battery = 0.0; self._charging = False
+        self._r0_soc_smooth = None       # 主车 SOC 平滑值（见 _lifepo4_7s_soc）
         self._last_llm_feedback = ""
 
         # ── 次车状态缓存 ──
@@ -700,23 +701,83 @@ class SystemManager(Node):
         # battery：精简字段，按车型计算 SOC
         if has_bat:
             v = float(bat_voltage)
-            # 主车 robot_0: 21V~25.55V 对应 0~100%
+            # 主车 robot_0: 7S 磷酸铁锂（22.4V/20Ah）查表，见 _lifepo4_7s_soc
             # 次车 1/2: 10V~12.6V 对应 0~100%
             if robot_id == "robot_0":
-                soc_calc = (v - 21.0) / (25.55 - 21.0) * 100.0
+                soc_calc = self._lifepo4_7s_soc(v)
+                # 平台区电压对负载极敏感（电机启停瞬间可跌 0.5V 以上 → 查表会跳几十个百分点）
+                # 故做 EMA 平滑（α=0.05，5Hz 上报时 τ≈4s），只影响显示，不影响其它字段
+                if self._r0_soc_smooth is None:
+                    self._r0_soc_smooth = soc_calc
+                else:
+                    self._r0_soc_smooth += 0.05 * (soc_calc - self._r0_soc_smooth)
+                soc_calc = self._r0_soc_smooth
             else:
                 soc_calc = (v - 10.0) / (12.6 - 10.0) * 100.0
             soc_calc = max(0.0, min(100.0, soc_calc))
 
-            entry["battery"] = {
-                "voltage": round(v, 2),
-                "soc": round(bat_soc, 1) if bat_soc is not None else round(soc_calc, 1),
-                "charging": bool(bat_charging) if bat_charging is not None else False,
-            }
+            if robot_id == "robot_1":
+                # 2026-09-16 用户指示：小车1 的电量固定为 100%。
+                # 缘由：底盘串口电量不可信（电压读数漂移超量程、percentage 量纲错 → soc 报 10000%）。
+                # 仅改上报口径，只影响 robot_1；robot_0 / robot_2 逻辑不变。
+                entry["battery"] = {
+                    "voltage": 12.6,
+                    "soc": 100.0,
+                    "charging": False,
+                }
+            else:
+                entry["battery"] = {
+                    "voltage": round(v, 2),
+                    "soc": round(bat_soc, 1) if bat_soc is not None else round(soc_calc, 1),
+                    "charging": bool(bat_charging) if bat_charging is not None else False,
+                }
         else:
             entry["battery"] = None
 
         return entry
+
+    # ──────────────────────────────────────────
+    #  主车电池：7S 磷酸铁锂 电压 → SOC
+    # ──────────────────────────────────────────
+    #  电池：24V 磷酸铁锂 20000mAh（P760S A 品电芯 + 库仑计，wheeltec 配套）
+    #    · 标称 22.4V = 7 × 3.2V  → 7 串
+    #    · 充电限制 25.5V = 7 × 3.65V（厂家铭牌值）
+    #    · 实测主车 20.0V 欠压关机（底盘/DC-DC 下限，对应单体 2.86V）
+    #  ⚠️ 必须查表，不能线性换算：磷酸铁锂放电平台极平，20%~90% 的电量
+    #     只落在 22.40~23.45V（约 1V）里；旧的 (v-21)/4.55 线性式把 21V 当 0%
+    #     （实为约 5%），23.45V 算出 53.6%，而真值约 90%。
+    #  端点由实车标定：24.0V=充满后静置(满)，20.0V=欠压关机(空)。
+    LIFEPO4_7S_TABLE = (
+        (25.50, 100.0),   # 充电器限压（充电末端，单体 3.65V）
+        (24.00, 100.0),   # 实测充满后静置，单体 3.43V
+        (23.45,  90.0),   # 单体 3.35V
+        (23.24,  80.0),
+        (23.10,  70.0),
+        (22.89,  60.0),
+        (22.82,  50.0),   # 单体 3.26V —— 平台区中心
+        (22.75,  40.0),
+        (22.54,  30.0),
+        (22.40,  20.0),   # 单体 3.20V
+        (22.05,  15.0),
+        (21.70,  10.0),
+        (21.00,   5.0),   # 单体 3.00V
+        (20.50,   2.0),
+        (20.00,   0.0),   # 实测主车欠压关机点，单体 2.86V
+    )
+
+    def _lifepo4_7s_soc(self, v: float) -> float:
+        """7S 磷酸铁锂端电压(V) → SOC(%)：分段线性插值，超范围钳到 0/100。"""
+        tbl = self.LIFEPO4_7S_TABLE
+        if v >= tbl[0][0]:
+            return 100.0
+        if v <= tbl[-1][0]:
+            return 0.0
+        # 表按电压从高到低排列：取第一个满足 v >= 区间下断点 的区间
+        # （单边判断即可，不用 v_lo <= v <= v_hi 双边写法——少一次比较，也无浮点缝隙顾虑）
+        for (v_hi, s_hi), (v_lo, s_lo) in zip(tbl, tbl[1:]):
+            if v >= v_lo:
+                return s_lo + (v - v_lo) / (v_hi - v_lo) * (s_hi - s_lo)
+        return 0.0
 
     # ──────────────────────────────────────────
     #  ROS 回调
