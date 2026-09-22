@@ -9,7 +9,7 @@ __pycache__/
 *.db
 *.tgz
 *.docx
-*.bak.*
+*.bak*
 combined_files.txt
 collect_files.sh
 src/wheeltec_mic_aiui/AIUI/msc/
