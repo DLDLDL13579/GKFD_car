@@ -77,7 +77,7 @@ def generate_launch_description():
     declare_params_file_cmd = DeclareLaunchArgument('params_file', default_value=os.path.join(my_param_dir, my_param_file))
     declare_autostart_cmd = DeclareLaunchArgument('autostart', default_value='true')
     declare_use_composition_cmd = DeclareLaunchArgument('use_composition', default_value='True')
-    declare_use_respawn_cmd = DeclareLaunchArgument('use_respawn', default_value='False')
+    declare_use_respawn_cmd = DeclareLaunchArgument('use_respawn', default_value='True')
     declare_log_level_cmd = DeclareLaunchArgument('log_level', default_value='info')
 
     bringup_cmd_group = GroupAction([
@@ -90,6 +90,7 @@ def generate_launch_description():
             parameters=[configured_params, {'autostart': autostart}],
             arguments=['--ros-args', '--log-level', log_level],
             remappings=remappings,
+            prefix='taskset -c 0,1,2',
             output='screen'),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
@@ -119,7 +120,8 @@ def generate_launch_description():
         name='amcl',
         output='screen',
         parameters=[configured_params],
-        remappings=remappings
+        remappings=remappings,
+        prefix='taskset -c 4,5'
     )
 
     # 注意：节点名沿用 lifecycle_manager_map_server（不改名），

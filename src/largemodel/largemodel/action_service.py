@@ -635,21 +635,29 @@ class CustomActionServer(Node):
             self.text_pub.publish(msg)
             # 发布动作完成状态给大模型
             self.action_status_pub("leave_charge_done")
+    # 主车标准发车点（my_map 新狗图坐标系；2026-09-18 重测）
+    # 与 maincar_start_pose.txt、rtabmap_nav_params.yaml 的 initial_pose 一致
+    START_POSE_X = 0.763
+    START_POSE_Y = -2.143
+    START_POSE_YAW_DEG = 2.0
+
     def _publish_initial_pose(self):
         """
-        底层基座方法：直接向 /initialpose 话题发送 (0,0,0) 原点坐标
+        底层基座方法：向 /initialpose 话题发送主车标准发车点坐标
+        （2026-09-18 起由 (0,0,0) 原点改为实测发车点 START_POSE_X/Y/YAW_DEG）
         """
         msg = PoseWithCovarianceStamped()
         msg.header.frame_id = "map"
         msg.header.stamp = self.get_clock().now().to_msg()
         
-        msg.pose.pose.position.x = 0.0
-        msg.pose.pose.position.y = 0.0
+        yaw = math.radians(self.START_POSE_YAW_DEG)
+        msg.pose.pose.position.x = self.START_POSE_X
+        msg.pose.pose.position.y = self.START_POSE_Y
         msg.pose.pose.position.z = 0.0
         msg.pose.pose.orientation.x = 0.0
         msg.pose.pose.orientation.y = 0.0
-        msg.pose.pose.orientation.z = 0.0
-        msg.pose.pose.orientation.w = 1.0 
+        msg.pose.pose.orientation.z = math.sin(yaw / 2.0)
+        msg.pose.pose.orientation.w = math.cos(yaw / 2.0)
         
         
         msg.pose.covariance[0] = 0.9
@@ -663,9 +671,9 @@ class CustomActionServer(Node):
 
     def set_initial_pose_to_origin(self):
         """
-        大模型动作：人工搬运后语音确认，重置位置为原点。
+        大模型动作：人工搬运后语音确认，重置位置为标准发车点。
         """
-        self.get_logger().info("收到用户指令，正在将位置强制重置为地图原点 (0, 0, 0)...")
+        self.get_logger().info("收到用户指令，正在将位置重置为标准发车点 (0.763, -2.143, 2.0°)...")
         self._publish_initial_pose()
         
         msg_text = String(data="位置校准完毕，我现在清晰地知道自己在哪里啦！")
@@ -1042,13 +1050,13 @@ class CustomActionServer(Node):
             time.sleep(30.0) 
             
             # 3. 核心机制：自动下发初始坐标
-            self.get_logger().info("自动发布初始坐标(0,0,0)，尝试在原点重定位...")
+            self.get_logger().info("发布初始位姿（RTAB 链路由 rtabmap 自行重定位，不消费 /initialpose）...")
             self._publish_initial_pose()
             time.sleep(10.0)
             
             if not self.is_localized():
                 self.get_logger().info("原点特征匹配失败，请求人工协助重置...")
-                msg = String(data="哎呀，我匹配不到周围的环境。请确认我已经放在了充电桩正前方的原点，然后对我说‘已经把你放到原点了’。")
+                msg = String(data="哎呀，我匹配不到周围的环境。请确认我已经放在了标准发车点（充电桩正前方），然后对我说‘已经把你放到原点了’。")
                 self.text_pub.publish(msg)
             else:
                 msg = String(data="导航系统启动成功，定位已就绪！")

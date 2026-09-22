@@ -14,28 +14,28 @@ amcl:
     global_frame_id: "map"          #定位系统发布的坐标框架的名称
     lambda_short: 0.1               #模型 z_short 部分的指数衰减参数
     laser_likelihood_max_dist: 2.0  #在地图上进行障碍物膨胀的最大距离，用于似然场模型
-    laser_max_range: 100.0          #要考虑的最大扫描范围，-1.0 将导致使用激光报告的最大范围
+    laser_max_range: 8.0          #要考虑的最大扫描范围，-1.0 将导致使用激光报告的最大范围
     laser_min_range: -1.0           #要考虑的最小扫描范围，-1.0 将导致使用激光报告的最小范围
     laser_model_type: "likelihood_field" #使用哪种模型，
     #beam、likelihood_field 或 unlikely_field_prob。与 unlikely_field 相同，但如果启用，则包含 beamskip 功能
-    max_beams: 60                   #更新过滤器时每次扫描要使用多少个均匀分布的光束。
-    max_particles: 5000             #允许的最大粒子数
-    min_particles: 1000              #允许的最小粒子数
+    update_min_d: 0.5
+    update_min_a: 0.4
+    max_beams: 20                   #更新过滤器时每次扫描要使用多少个均匀分布的光束。
+    max_particles: 2000             #允许的最大粒子数
+    min_particles: 500              #允许的最小粒子数
     odom_frame_id: "odom_combined"  #使用哪个框架进行里程计
     pf_err: 0.02                    #粒子过滤器群体误差
     pf_z: 0.85                      #粒子过滤器群体密度
     recovery_alpha_fast: 0.1        #快速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
     recovery_alpha_slow: 0.001        #慢速平均权重过滤器的指数衰减率，用于决定何时通过添加随机姿势进行恢复。
-    resample_interval: 2            #重采样之前所需的过滤器更新次数
-    robot_model_type: "nav2_amcl::DifferentialMotionModel" #插件类的完全限定类型。
+    resample_interval: 4            #重采样之前所需的过滤器更新次数
+    robot_model_type: "nav2_amcl::OmniMotionModel" #插件类的完全限定类型。
     #选项为“nav2_amcl::DifferentialMotionModel”和“nav2_amcl::OmniMotionModel”。
 
     save_pose_rate: 0.5             #将最后估计的姿势和协方差存储到参数服务器的最大速率（Hz）
     sigma_hit: 0.02                 #模型的 z_hit 部分中使用的高斯模型的标准差
     tf_broadcast: true              #将其设置为 false 以防止 amcl 发布全局框架和里程计框架之间的变换
     transform_tolerance: 0.3        #发布转换的容差
-    update_min_a: 0.06              #执行过滤器更新之前需要进行旋转运动。
-    update_min_d: 0.025             #执行过滤器更新之前需要进行平移运动
     z_hit: 0.7                      #模型的 z_hit 部分的混合权重，所有使用的 z 权重之和必须为 1。
     z_max: 0.001                    #模型的 z_max 部分的混合权重，所有使用的 z 权重之和必须为 1。
     z_rand: 0.059                   #模型的 z_rand 部分的混合权重，所有使用的 z 权重之和必须为 1。
@@ -44,10 +44,10 @@ amcl:
 
     # Initial Pose
     set_initial_pose: True #AMCL 从 initial_pose* 参数设置初始姿势，而不是等待 initial_pose 消息
-    initial_pose.x: 0.0
-    initial_pose.y: 0.0
+    initial_pose.x: 0.763
+    initial_pose.y: -2.143
     initial_pose.z: 0.0
-    initial_pose.yaw: 0.0
+    initial_pose.yaw: 0.0349
     #Amcl参数解释参考：https://docs.nav2.org/configuration/packages/configuring-amcl.html
 
 amcl_map_client:
@@ -62,7 +62,7 @@ bt_navigator:
   ros__parameters:
     use_sim_time: False
     transform_tolerance: 0.15 #变换容差
-    goal_reached_tol: 0.15 #接受姿势作为目标的容忍度(m)
+    goal_reached_tol: 0.05 #接受姿势作为目标的容忍度(m)
     global_frame: map
     robot_base_frame: base_footprint
     odom_topic: /odom_combined
@@ -99,8 +99,8 @@ controller_server:
     # Progress checker parameters
     progress_checker: #进度检查器
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5 #所需运动半径
-      movement_time_allowance: 10.0 #移动时间容差
+      required_movement_radius: 0.25 #所需运动半径
+      movement_time_allowance: 20.0 #移动时间容差
     # Goal checker parameters
     #precise_goal_checker:
     #  plugin: "nav2_controller::SimpleGoalChecker"
@@ -110,8 +110,8 @@ controller_server:
     general_goal_checker: #目标检查器
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.15 #xy 目标容差
-      yaw_goal_tolerance: 0.15 #yaw目标容差
+      xy_goal_tolerance: 0.10 #xy 目标容差
+      yaw_goal_tolerance: 0.20 #yaw目标容差
     # DWB parameters
     FollowPath: 
       plugin: "nav2_rotation_shim_controller::RotationShimController" #旋转控制器
