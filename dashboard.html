@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <title>Jetson 机器人控制台 - Debug专版</title>
+<!-- 依赖：本地优先，加载失败自动回退 CDN（离线可用 + 在线兜底） -->
 <script src="paho-mqtt.min.js"></script>
+<script>if (typeof Paho === "undefined") { document.write('<script src="https://cdn.jsdelivr.net/npm/paho-mqtt@1.1.0/paho-mqtt.min.js"><\/script>'); }</script>
 <script src="nipplejs.min.js"></script>
+<script>if (typeof nipplejs === "undefined") { document.write('<script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"><\/script>'); }</script>
 <style>
 :root{
   --bg:#1e272e;--panel:#2c3e50;--panel2:#34495e;
@@ -47,6 +50,9 @@ video,img{display:block}
 .voice-box{display:flex;gap:6px;margin-top:6px}
 .voice-box input{flex:1;padding:6px;border-radius:4px;border:none;outline:none;font-size:13px}
 .voice-box button{background:var(--warn);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:700;font-size:13px}
+.formation-bar{display:flex;gap:8px;margin-bottom:10px}
+.formation-bar button{flex:1;background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:5px;cursor:pointer;font-weight:700;font-size:13px}
+.formation-bar button:active{transform:scale(0.97)}
 .llm-box{background:var(--panel2);border:1px solid #4a627a;padding:8px;border-radius:4px;min-height:48px;font-size:12px;white-space:pre-wrap}
 .battery-row{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:12px}
 .battery-shell{width:90px;height:12px;background:#555;border-radius:3px;overflow:hidden}
@@ -54,6 +60,7 @@ video,img{display:block}
 .battery-fill.low{background:var(--err)}
 .pose-info{font-size:12px;display:flex;gap:14px;flex-wrap:wrap;color:#bdc3c7}
 .pose-info b{color:var(--text)}
+.fleet-info{margin-top:8px;padding:6px 8px;background:var(--panel2);border-radius:4px;font-size:12px;color:#bdc3c7;line-height:1.5}
 #map-container{width:100%;max-width:480px;aspect-ratio:4/3;background:#34495e center/contain no-repeat;border-radius:6px;position:relative;overflow:hidden;border:1px solid #4a627a}
 #map-container .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-direction:column;gap:10px;text-align:center;padding:10px;}
 #robot-marker{width:14px;height:14px;background:var(--err);border:2px solid #fff;border-radius:50%;position:absolute;transform:translate(-50%,-50%);display:none;box-shadow:0 0 6px rgba(0,0,0,.6)}
@@ -104,6 +111,10 @@ video,img{display:block}
 
   <div class="panel">
     <h3>系统功能栈</h3>
+    <div class="formation-bar">
+      <button id="btn-formation-row" title="小车1到主车左侧1米、机器狗到右侧1米">👥 横队列队</button>
+      <button id="btn-formation-tri" title="主车前顶点，小车1左后、机器狗右后各1米">🔺 三角列队</button>
+    </div>
     <div class="node-grid" id="node-grid"></div>
     <div class="battery-row">
       <span>电量</span>
@@ -116,6 +127,7 @@ video,img{display:block}
       <span>Vx <b id="pose-vx">--</b></span>
       <span>Vz <b id="pose-vz">--</b></span>
     </div>
+    <div class="fleet-info" id="fleet-info">等待三车状态…</div>
     <h3 style="margin-top:14px">大模型语音交互</h3>
     <div class="llm-box" id="llm-response">等待语音反馈...</div>
     <div class="voice-box">
@@ -165,7 +177,7 @@ function sysLog(msg, type="info") {
 // 配置：URL 参数 > localStorage > 默认
 // ============================================================
 const DEFAULTS = {
-  host:       "192.168.31.42",
+  host:       "192.168.31.43",
   wsPort:     9001,
   rtcPort:    8082,
   mjpegPort:  8080,
@@ -173,23 +185,25 @@ const DEFAULTS = {
   mqttPath:   "/mqtt",   // mosquitto WS listener 默认路径
 };
 const SYSTEM_NODES = [
-  // startable=false:开机自启,不可手动启停(后端 /status/all 第一次到达会被覆盖)
+  // 与后端 FEATURE_REGISTRY 逐项对齐（名称取自后端 name 字段）
+  // startable=false: 开机自启,不可手动启停
   {id:"base",name:"底盘驱动",startable:false},
   {id:"camera",name:"摄像头",startable:false},
   {id:"mic",name:"麦克风阵列",startable:false},
-  {id:"webrtc",name:"WebRTC推流",startable:false},
-  {id:"web_console",name:"Web控制台",startable:false},
-  {id:"largemodel",name:"大模型AI",startable:false},
-  // startable=true:可由用户触发(走 voice pipeline)
-  {id:"slam",name:"SLAM建图",startable:true},
+  {id:"webrtc",name:"视频推流",startable:false},
+  {id:"web_console",name:"Web 控制台",startable:false},
+  {id:"largemodel",name:"大模型 AI",startable:false},
+  // startable=true: 可由用户触发(走 voice pipeline)
+  {id:"slam",name:"SLAM 建图",startable:true},
   {id:"nav2",name:"自主导航",startable:true},
-  {id:"kcf",name:"KCF视觉跟随",startable:true},
+  {id:"kcf",name:"KCF 视觉跟随",startable:true},
   {id:"path_follow",name:"路径跟随",startable:true},
   {id:"align",name:"回充对接",startable:true},
 ];
 
 const cfg = { ...DEFAULTS };
 let mqttClient = null;
+let lastLlmFeedback = "";   // 上一次已显示的大模型反馈，用于去重
 let reconnectAttempt = 0;
 let reconnectTimer = null;
 let pc = null;
@@ -269,9 +283,7 @@ function connectMQTT() {
         setMqttStatus(`已连接 ${cfg.host}:${cfg.wsPort}`, "ok");
         sysLog(`[MQTT] 连接成功！已桥接至 ROS2`, "info");
         mqttClient.subscribe(cfg.prefix + "/status/all");
-        mqttClient.subscribe(cfg.prefix + "/voice/response");
-        
-        // 【新增代码：订阅地图数据流】
+        mqttClient.subscribe(cfg.prefix + "/status/info");
         mqttClient.subscribe(cfg.prefix + "/map_data");
       },
       onFailure: (e) => {
@@ -325,11 +337,23 @@ function onMsg(msg) {
   }
   
   if (t === cfg.prefix + "/status/all") {
-    if (p.features)  updateFeatures(p.features);
-    if (p.robot)     updateRobot(p.robot);
-    if (p.llm_feedback) $("#llm-response").textContent = p.llm_feedback;
-  } else if (t === cfg.prefix + "/voice/response") {
-    $("#llm-response").textContent = p.text || "(empty)";
+    // v2.0: features=数组, robots=数组(3车), llm={feedback,timestamp}
+    if (Array.isArray(p.features)) updateFeatures(p.features);
+    if (Array.isArray(p.robots))   updateRobots(p.robots);
+    if (p.llm && p.llm.feedback) {
+      // 注意：后端的 llm.timestamp 是「报文发送时刻」而非「反馈产生时刻」，
+      // 每 200ms 上报一次会让它一直跳动，会误导成"机器人在反复说"。
+      // 故此处不显示时间戳，且仅在反馈内容真的变化时才刷新显示。
+      if (p.llm.feedback !== lastLlmFeedback) {
+        lastLlmFeedback = p.llm.feedback;
+        $("#llm-response").textContent = p.llm.feedback;
+        sysLog(`[大模型] 新反馈: ${p.llm.feedback}`, "info");
+      }
+    }
+  } else if (t === cfg.prefix + "/status/info") {
+    const now = new Date().toLocaleTimeString();
+    sysLog(`[后端] ${p.msg || JSON.stringify(p)}`, "info");
+    if (p.msg) $("#llm-response").textContent = `[${now}] ${p.msg}`;
   } 
   // 【处理后端发来的 Base64 地图数据】—— 加 fallback + log 防故障
   else if (t === cfg.prefix + "/map_data") {
@@ -395,10 +419,17 @@ function renderNodePanel() {
 }
 function updateFeatures(f) {
   if (!f) return;
+  // v2.0: f 是数组 [{id,name,category,behavior,status,voice?}, ...]
+  const byId = {};
+  if (Array.isArray(f)) {
+    f.forEach((x) => { if (x && x.id) byId[x.id] = x; });
+  } else if (typeof f === "object") {
+    Object.keys(f).forEach((k) => { byId[k] = f[k]; });   // 兼容 v1 对象格式
+  }
   SYSTEM_NODES.forEach((n) => {
     const dot = document.querySelector(`[data-dot="${n.id}"]`);
     if (!dot) return;
-    const s = f[n.id];
+    const s = byId[n.id];
     dot.className = "dot";
     if (s && s.status === "running")      dot.classList.add("running");
     else if (s && s.status === "crashed") dot.classList.add("crashed");
@@ -439,27 +470,56 @@ function sendSysCmd(action, target) {
 // ============================================================
 // 机器人状态 / 电池 / 地图标记
 // ============================================================
-function updateRobot(r) {
-  if (!r) return;
-  if (r.position) {
-    $("#pose-x").textContent = r.position.x?.toFixed(2) ?? "--";
-    $("#pose-y").textContent = r.position.y?.toFixed(2) ?? "--";
-    updateMarker(r.position.x, r.position.y);
+const ROBOT_LABEL = { robot_0: "主车", robot_1: "小车1", robot_2: "机器狗" };
+
+function updateRobots(robots) {
+  if (!Array.isArray(robots) || !robots.length) return;
+  const byId = {};
+  robots.forEach((r) => { if (r && r.id) byId[r.id] = r; });
+
+  // ① 主车详情（位姿/速度/电量）
+  const m = byId["robot_0"];
+  if (m) {
+    if (m.pose) {
+      $("#pose-x").textContent  = Number(m.pose.x).toFixed(2);
+      $("#pose-y").textContent  = Number(m.pose.y).toFixed(2);
+      updateMarker(m.pose.x, m.pose.y);
+    } else {
+      $("#pose-x").textContent = "--";
+      $("#pose-y").textContent = "--";
+    }
+    if (m.velocity) {
+      $("#pose-vx").textContent = Number(m.velocity.linear).toFixed(2);
+      $("#pose-vz").textContent = Number(m.velocity.angular).toFixed(2);
+    } else {
+      $("#pose-vx").textContent = "--";
+      $("#pose-vz").textContent = "--";
+    }
+    // battery 是对象 {voltage, soc, charging}
+    const b = m.battery;
+    if (b && typeof b === "object") {
+      const soc = Number(b.soc);
+      $("#battery-text").textContent =
+        `${Number(b.voltage).toFixed(2)} V · ${soc.toFixed(0)}%${b.charging ? " ⚡" : ""}`;
+      const fill = $("#battery-fill");
+      fill.style.width = Math.max(0, Math.min(100, soc)).toFixed(0) + "%";
+      fill.classList.toggle("low", soc <= 30);
+    } else {
+      $("#battery-text").textContent = "-- V";
+    }
   }
-  if (r.velocity) {
-    $("#pose-vx").textContent = r.velocity.linear?.toFixed(2) ?? "--";
-    $("#pose-vz").textContent = r.velocity.angular?.toFixed(2) ?? "--";
-  }
-  if (r.battery !== undefined) {
-    const v = r.battery;
-    $("#battery-text").textContent = v.toFixed(1) + " V";
-    const pct = Math.min(100, Math.max(0, (v - 10.5) / 2.5 * 100));
-    const fill = $("#battery-fill");
-    fill.style.width = pct.toFixed(0) + "%";
-    fill.classList.toggle("low", pct <= 30);
-  }
+
+  // ② 三车在线一览
+  const parts = robots.map((r) => {
+    const label = ROBOT_LABEL[r.id] || r.id;
+    const dot = r.online ? "🟢" : "⚪";
+    const nav = r.nav_running ? "·导航中" : "";
+    const pos = r.pose ? `(${Number(r.pose.x).toFixed(2)}, ${Number(r.pose.y).toFixed(2)})` : "无位姿";
+    return `${dot}${label}${nav}${r.online ? " " + pos : ""}`;
+  });
+  $("#fleet-info").textContent = parts.join("   ");
   $("#telemetry-info").textContent =
-    `online=${r.online?"true":"false"} · charging=${r.charging?"true":"false"}`;
+    `更新 ${new Date().toLocaleTimeString()} · ${robots.filter(r => r.online).length}/${robots.length} 在线`;
 }
 function updateMarker(x, y) {
   const m = $("#robot-marker");
@@ -510,7 +570,7 @@ function sendVoiceCmd() {
   const t = i.value.trim();
   if (!t) return;
   if (publishJson("voice_input", { text: t })) {
-    $("#llm-response").textContent = "思考中…";
+    $("#llm-response").textContent = "[" + new Date().toLocaleTimeString() + "] 思考中…（已发送: " + t + "）";
   } else {
     $("#llm-response").textContent = "MQTT 未连接，无法发送";
   }
@@ -652,7 +712,38 @@ function showVideo(which) {
   else if (which === "mjpeg")  { m.classList.remove("hidden"); startMJPEG(); }
 }
 
+const formationBtn = $("#btn-formation-row");
+if (formationBtn) {
+  formationBtn.addEventListener("click", () => {
+    sysLog("[编队] 请求横队列队（模拟语音指令）", "info");
+    if (publishJson("cmd/voice", { text: "横着排成一排" })) {
+      $("#llm-response").textContent = "[" + new Date().toLocaleTimeString() + "] [按钮] 横队列队已下发，等待次车到位…";
+    } else {
+      $("#llm-response").textContent = "MQTT 未连接，无法发送编队指令";
+    }
+  });
+}
+
+const triBtn = $("#btn-formation-tri");
+if (triBtn) {
+  triBtn.addEventListener("click", () => {
+    sysLog("[编队] 请求三角列队（模拟语音指令）", "info");
+    if (publishJson("cmd/voice", { text: "三角排" })) {
+      $("#llm-response").textContent = "[" + new Date().toLocaleTimeString() + "] [按钮] 三角列队已下发，等待次车到位…";
+    } else {
+      $("#llm-response").textContent = "MQTT 未连接，无法发送编队指令";
+    }
+  });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+  // 依赖自检：缺失时明确告知（而不是静默残废）
+  if (typeof Paho === "undefined") {
+    sysLog("依赖缺失：paho-mqtt.min.js 未加载，MQTT 将不可用！请确认与 dashboard.html 同目录存在该文件", "error");
+  }
+  if (typeof nipplejs === "undefined") {
+    sysLog("依赖缺失：nipplejs.min.js 未加载，摇杆将不可用！", "warn");
+  }
   loadConfig();
   syncConfigUI();
   sysLog("前端系统初始化完毕，开始加载各项组件...", "info");

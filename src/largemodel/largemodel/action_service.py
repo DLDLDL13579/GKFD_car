@@ -23,6 +23,8 @@ from ament_index_python.packages import get_package_share_directory
 import os
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf2_msgs.msg import TFMessage
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 import threading
 from rclpy.executors import MultiThreadedExecutor
 from turn_on_wheeltec_robot.msg import Position 
@@ -124,7 +126,10 @@ class CustomActionServer(Node):
             "restart_done": "机器人反馈：重启指令执行完毕",
             "auto_charge_done": "机器人反馈：执行auto_charge()完成，已成功对接充电桩",
             "leave_charge_done": "机器人反馈：执行leave_charge()完成，已安全脱离充电桩",
-            "set_initial_pose_done": "机器人反馈：执行set_initial_pose_to_origin()完成，位置已重置"
+            "set_initial_pose_done": "机器人反馈：执行set_initial_pose_to_origin()完成，位置已重置",
+            "formation_row_done": "机器人反馈:执行formation_row()完成，横队目标已下发",
+            "formation_triangle_done": "机器人反馈:执行formation_triangle()完成，三角队目标已下发",
+            "all_return_start_done": "机器人反馈:执行all_return_start()完成，全体返回发车点目标已下发"
         }
         self._sensor_map = {
             '相机': '/camera/color/image_raw',
@@ -151,6 +156,9 @@ class CustomActionServer(Node):
 
         # 【新增】：发布初始位姿的话题，用于自动和手动重置小车原点坐标
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped, '/initialpose', 10)
+        # 【编队】次车导航目标发布器（下行中继白名单已有 goal_pose）
+        self._formation_robot_1_goal_pub = self.create_publisher(PoseStamped, "/robot_1/goal_pose", 10)
+        self._formation_robot_2_goal_pub = self.create_publisher(PoseStamped, "/robot_2/goal_pose", 10)
 
         # 创建tf监听者，监听坐标变换 
         self.tf_buffer = Buffer()
@@ -681,6 +689,246 @@ class CustomActionServer(Node):
         
         if not self.interrupt_flag:
             self.action_status_pub("set_initial_pose_done")
+
+    # ════════════════════════════════════════════════════════════
+    #  多机编队（2026-09-22 新增）：横队列队
+    #  锚点=主车当前实时位姿(map系)；小车1在主车左侧、狗在右侧，
+    #  各偏移 FORMATION_SPACING 米、朝向与主车一致；只发 goal_pose，
+    #  到位由次车 Nav2 自主完成；60s 后台线程语音回报整队结果。
+    # ════════════════════════════════════════════════════════════
+    FORMATION_SPACING = 1.5     # m，槽位与锚点的横向间距（2026-09-23 1.0→1.5：bag 实测 1m 间距下两车互入对方 inflation 区，狗被列队中的小车1 挤退 1.4m）
+    FORMATION_TIMEOUT = 60.0    # s，整队回报时限
+    FORMATION_YAW_OFF = math.radians(90.0)   # 槽位相对主车朝向的方位角（左90°/右-90°）
+
+    def _formation_slot(self, ax, ay, ayaw, side):
+        """
+        由锚点(主车位姿)推算编队槽位。
+        side=+1 → 主车前进方向左侧；side=-1 → 右侧。
+        返回 (x, y, yaw)：槽位位置与朝向（朝向与主车一致）。
+        """
+        bx = ax + math.cos(ayaw + side * self.FORMATION_YAW_OFF) * self.FORMATION_SPACING
+        by = ay + math.sin(ayaw + side * self.FORMATION_YAW_OFF) * self.FORMATION_SPACING
+        return bx, by, ayaw
+
+    @staticmethod
+    def _yaw_of(q) -> float:
+        return math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+        )
+
+    def formation_row(self):
+        """
+        大模型动作：横队列队。小车1去主车左侧1米、机器狗去右侧1米，
+        主车原地不动。目标经下行中继下发，次车 Nav2 各自导航。
+        """
+        # 1. 取锚点：主车当前实时位姿
+        try:
+            tf = self.tf_buffer.lookup_transform(
+                "map", "base_footprint", rclpy.time.Time()
+            )
+        except Exception as e:
+            self.get_logger().warn(f"[formation] TF lookup failed: {e}")
+            self.text_pub.publish(String(data="我还没定位好，请先校准位置再列队。"))
+            return
+        ax = tf.transform.translation.x
+        ay = tf.transform.translation.y
+        ayaw = self._yaw_of(tf.transform.rotation)
+        self.get_logger().info(
+            f"[formation] anchor x={ax:.2f} y={ay:.2f} yaw={math.degrees(ayaw):.1f}°"
+        )
+
+        # 2. 推算两槽位（左=小车1，右=狗）
+        r1 = self._formation_slot(ax, ay, ayaw, side=+1)
+        r2 = self._formation_slot(ax, ay, ayaw, side=-1)
+
+        # 3. 下发（公共函数，与三角队共用）
+        self._formation_publish(r1, r2)
+
+        # 4. 即时语音 + 60s 后台回报
+        self.text_pub.publish(String(
+            data="收到！小车1到我左边一米，机器狗到我右边一米，横排整队开始！"))
+        t = threading.Thread(target=self._formation_report, kwargs={"form_type": "横队"}, daemon=True)
+        t.start()
+
+        if not self.interrupt_flag:
+            self.action_status_pub("formation_row_done")
+
+    def _formation_report(self, form_type="横队"):
+        """60 秒后整队回报（2026-09-23 起真校验：TF 读两车实际位姿，距各自槽位 <0.30m 才算就位）。"""
+        time.sleep(self.FORMATION_TIMEOUT)
+        try:
+            ok, detail = self._check_formation_arrival()
+            if ok:
+                self.text_pub.publish(String(data=f"{form_type}整队完毕！"))
+            else:
+                self.text_pub.publish(String(data=f"{form_type}整队未完成：{detail}。可以再说一次列队口令让我重发目标。"))
+        except Exception as e:
+            self.get_logger().warn(f"[formation_report] 校验异常回退盲报: {e}")
+            self.text_pub.publish(String(data=f"{form_type}整队完毕！"))
+
+    def _check_formation_arrival(self, tol=0.30, wait=6.0):
+        """
+        用最近一次 _formation_publish 记录的两个槽位做校验。
+        返回 (bool, str): 全部就位/谁没到位。
+        """
+        slots = getattr(self, "_last_slots", None)
+        if not slots:
+            return False, "没有可校验的槽位记录"
+        # 2026-09-23 改原始 /tf BEST_EFFORT 订阅+手工两级复合:
+        # tf2 Buffer 默认 RELIABLE 收不到 domain 桥转发的 robot_1 帧(实测 QoS 不兼容)
+        tf_cache = {}
+        node = rclpy.create_node('formation_check_tmp')
+        qos = QoSProfile(depth=300, reliability=ReliabilityPolicy.BEST_EFFORT,
+                         durability=DurabilityPolicy.VOLATILE)
+        def on_tf(msg):
+            for t in msg.transforms:
+                tf_cache[(t.header.frame_id, t.child_frame_id)] = t
+        node.create_subscription(TFMessage, '/tf', on_tf, qos)
+        t0 = time.time()
+        while time.time() - t0 < wait:
+            rclpy.spin_once(node, timeout_sec=0.3)
+        node.destroy_node()
+        bad = []
+        for (gx, gy, gyaw, name) in slots:
+            odom = "robot_1/odom" if "小车1" in name else "robot_2/odom"
+            base = "robot_1/base_link" if "小车1" in name else "robot_2/base_link"
+            t1 = tf_cache.get(("map", odom))
+            t2 = tf_cache.get((odom, base))
+            if not (t1 and t2):
+                bad.append(f"{name}位姿不可读")
+                continue
+            def _yaw(tr):
+                q = tr.transform.rotation
+                return math.atan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
+            ax, ay, ayaw = t1.transform.translation.x, t1.transform.translation.y, _yaw(t1)
+            bx, by, byaw = t2.transform.translation.x, t2.transform.translation.y, _yaw(t2)
+            x = ax + math.cos(ayaw)*bx - math.sin(ayaw)*by
+            y = ay + math.sin(ayaw)*bx + math.cos(ayaw)*by
+            dist = math.hypot(x - gx, y - gy)
+            self.get_logger().info(
+                f"[formation_check] {name} 距槽位 {dist:.2f}m (实际({x:.2f},{y:.2f}) 目标({gx:.2f},{gy:.2f}))"
+            )
+            if dist > tol:
+                bad.append(f"{name}还差{dist:.1f}米")
+        if bad:
+            return False, "、".join(bad)
+        return True, ""
+
+
+    def formation_triangle(self):
+        """
+        大模型动作：三角队列队。主车为前顶点，小车1去左后45°、
+        机器狗去右后45°，各1.0米（等腰直角三角形，两车相距约1.41米），
+        主车原地不动。目标经下行中继下发，次车 Nav2 各自导航。
+        """
+        try:
+            tf = self.tf_buffer.lookup_transform(
+                "map", "base_footprint", rclpy.time.Time()
+            )
+        except Exception as e:
+            self.get_logger().warn(f"[formation] TF lookup failed: {e}")
+            self.text_pub.publish(String(data="我还没定位好，请先校准位置再列队。"))
+            return
+        ax = tf.transform.translation.x
+        ay = tf.transform.translation.y
+        ayaw = self._yaw_of(tf.transform.rotation)
+
+        off = math.radians(135.0)   # 左后/右后 45°（相对前进方向 180°∓45°）
+        r1 = (
+            ax + math.cos(ayaw + off) * self.FORMATION_SPACING,
+            ay + math.sin(ayaw + off) * self.FORMATION_SPACING,
+            ayaw,
+        )
+        r2 = (
+            ax + math.cos(ayaw - off) * self.FORMATION_SPACING,
+            ay + math.sin(ayaw - off) * self.FORMATION_SPACING,
+            ayaw,
+        )
+        self._formation_publish(r1, r2)
+        self.text_pub.publish(String(
+            data="收到！小车1到我左后方，机器狗到我右后方，三角整队开始！"))
+        threading.Thread(target=self._formation_report, kwargs={"form_type": "三角队"}, daemon=True).start()
+        if not self.interrupt_flag:
+            self.action_status_pub("formation_triangle_done")
+
+    def _formation_publish(self, r1, r2):
+        """编队公共下发：两槽位各连发两次 goal_pose 防跨机丢包。"""
+        now = self.get_clock().now().to_msg()
+        # 记录槽位供 60s 后整队校验(2026-09-23)
+        self._last_slots = [
+            (r1[0], r1[1], r1[2], "小车1"),
+            (r2[0], r2[1], r2[2], "机器狗"),
+        ]
+        for (x, y, yaw), topic in ((r1, "/robot_1/goal_pose"), (r2, "/robot_2/goal_pose")):
+            goal = PoseStamped()
+            goal.header.frame_id = "map"
+            goal.header.stamp = now
+            goal.pose.position.x = x
+            goal.pose.position.y = y
+            goal.pose.position.z = 0.0
+            goal.pose.orientation.z = math.sin(yaw / 2.0)
+            goal.pose.orientation.w = math.cos(yaw / 2.0)
+            pub = getattr(self, "_formation_" + topic.split("/")[1] + "_goal_pub")
+            for _ in range(2):
+                pub.publish(goal)
+                time.sleep(0.1)
+            self.get_logger().info(
+                f"[formation] {topic} -> ({x:.2f}, {y:.2f}, {math.degrees(yaw):.1f}°)"
+            )
+
+    # ════════════════════════════════════════════════════════════
+    #  全体回发车点（2026-09-23 新增）：语音"全体回到发车点"
+    #  按名字在 map_mapping.yaml 动态找 G/H/I 三点(各自车种的发车点)：
+    #    主车 -> navigation(自己的key)   (Nav2 自主导航)
+    #    小车1 -> /robot_1/goal_pose    (下行中继, 连发2次防丢包)
+    #    狗    -> /robot_2/goal_pose    (下行中继, 连发2次防丢包)
+    # ════════════════════════════════════════════════════════════
+    def all_return_start(self):
+        """
+        大模型动作：全体回发车点。狗和小车1各自导航回自己的发车点，
+        主车同时导航回自己的发车点。
+        """
+        # 1. 加载点位映射(字母->中文名)
+        self.load_target_points()
+        navname = getattr(self, 'navname_dict', {})
+        # 名字匹配规则：兼容"主车发车点/机械狗发车点/履带车发车点"的既有命名
+        main_key = next((k for k, v in navname.items() if '主车发车' in v), None)
+        r1_key   = next((k for k, v in navname.items() if '履带车发车' in v or '小车1发车' in v), None)
+        dog_key  = next((k for k, v in navname.items() if '机械狗发车' in v or '狗发车' in v), None)
+
+        if not all([main_key, r1_key, dog_key]):
+            self.get_logger().error(f"[all_return] 发车点记录不全: 主车={main_key} 小车1={r1_key} 狗={dog_key}")
+            self.text_pub.publish(String(data="抱歉，地图里还没有记全三台车的发车点呢。"))
+            return
+
+        # 2. 下发次车目标(连发 2 次防跨机丢包, 与编队共用发布器)
+        now = self.get_clock().now().to_msg()
+        for key, topic in ((r1_key, "/robot_1/goal_pose"), (dog_key, "/robot_2/goal_pose")):
+            pose = self.navpose_dict.get(key)
+            goal = PoseStamped()
+            goal.header.frame_id = "map"
+            goal.header.stamp = now
+            goal.pose = pose.pose
+            pub = getattr(self, "_formation_" + topic.split("/")[1] + "_goal_pub")
+            for _ in range(2):
+                pub.publish(goal)
+                time.sleep(0.1)
+            self.get_logger().info(
+                f"[all_return] {topic} -> {key}({navname[key]}) "
+                f"({pose.pose.position.x:.2f}, {pose.pose.position.y:.2f})"
+            )
+
+        # 3. 主车自己回自己的发车点(Nav2 动作, 不阻塞语音线程太久: 后台线程)
+        t = threading.Thread(
+            target=lambda: self.navigation(main_key), daemon=True
+        )
+        t.start()
+
+        self.text_pub.publish(String(
+            data="收到！大家各自回发车点，小车1回履带车发车点，机器狗回机械狗发车点，我回主车发车点！"))
+        if not self.interrupt_flag:
+            self.action_status_pub("all_return_start_done")
 
     def wait(self, duration):
         duration = float(duration)

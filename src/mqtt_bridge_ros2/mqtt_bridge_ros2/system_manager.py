@@ -242,7 +242,11 @@ class SystemManager(Node):
         self._initial_poll_done = False
 
         # ── 设备在线探测（TCP:22，独立于 ROS 数据流；sshd=运维命脉，语义=设备在线）──
-        self._probe_targets = {"robot_1": "192.168.31.235", "robot_2": "192.168.31.91"}
+        # 2026-09-23 双网段探测(任一 IP 通即在线): 小米网(可回退) + iPhone 热点(当前)
+        self._probe_targets = {
+            "robot_1": ["192.168.31.235", "172.20.10.2"],
+            "robot_2": ["192.168.31.91", "172.20.10.3"],
+        }
         self._net_online = {rid: False for rid in self._probe_targets}
         self._probe_fails = {rid: 0 for rid in self._probe_targets}
         threading.Thread(target=self._probe_loop, daemon=True).start()
@@ -482,26 +486,34 @@ class SystemManager(Node):
     #  设备在线探测（daemon 线程，不阻塞 rclpy 主循环）
     # ──────────────────────────────────────────
     PROBE_INTERVAL = 5.0          # 探测间隔(s)
-    PROBE_TIMEOUT = 1.0           # 单次 TCP 连接超时(s)
+    PROBE_TIMEOUT = 3.0           # 单次 TCP 连接超时(s) ←订正2026-09-23 1.0→3.0: 热点网 RTT 高, 狗 ssh 握手实测 2.36s, 1s 超时必误判离线
     PROBE_FAILS_TO_OFFLINE = 2    # 连续失败 N 次才判离线（防 WiFi 抖动）
 
     def _probe_loop(self):
         import socket
         while True:
-            for rid, ip in self._probe_targets.items():
-                try:
-                    s = socket.create_connection((ip, 22), timeout=self.PROBE_TIMEOUT)
-                    s.close()
+            for rid, ips in self._probe_targets.items():
+                # 双 IP: 任一地址 TCP:22 可达即在线(2026-09-23)
+                hit_ip = None
+                for ip in (ips if isinstance(ips, list) else [ips]):
+                    try:
+                        s = socket.create_connection((ip, 22), timeout=self.PROBE_TIMEOUT)
+                        s.close()
+                        hit_ip = ip
+                        break
+                    except OSError:
+                        continue
+                if hit_ip is not None:
                     if not self._net_online[rid]:
-                        self.get_logger().info(f"[probe] {rid}({ip}) 设备上线")
+                        self.get_logger().info(f"[probe] {rid}({hit_ip}) 设备上线")
                     self._net_online[rid] = True
                     self._probe_fails[rid] = 0
-                except OSError:
+                else:
                     self._probe_fails[rid] += 1
                     if self._probe_fails[rid] >= self.PROBE_FAILS_TO_OFFLINE and self._net_online[rid]:
                         self._net_online[rid] = False
                         self.get_logger().warn(
-                            f"[probe] {rid}({ip}) 设备离线（连续{self._probe_fails[rid]}次探测失败）")
+                            f"[probe] {rid}(全地址失败) 设备离线（连续{self._probe_fails[rid]}次探测失败）")
             time.sleep(self.PROBE_INTERVAL)
 
     def _poll_ros_nodes(self):
